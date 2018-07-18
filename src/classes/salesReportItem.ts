@@ -29,5 +29,4 @@ export class SalesReportItem {
         return this._orderNumber;
     }
 
-
 }
