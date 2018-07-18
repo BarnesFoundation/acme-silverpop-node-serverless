@@ -1,7 +1,5 @@
-**
-
-# ACME Silverpop Node
-This project is a simple rewrite of the existing *ACME Silverpop* project from C# into NodeJS, with enforced typings using TypeScript.
+## ACME Silverpop Node
+This project is a rewrite of the existing *ACME Silverpop* project from C# into NodeJS, with enforced typings using TypeScript.
 
 ## Installation 
 
