@@ -1,0 +1,14 @@
+{
+  "name": "acme-silverpop-node",
+  "version": "1.0.0",
+  "description": "ACME Silverpop project ported over to NodeJS/TypeScript",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Christopher D Jativa",
+  "license": "ISC",
+  "dependencies": {
+    "typescript": "^2.9.2"
+  }
+}
