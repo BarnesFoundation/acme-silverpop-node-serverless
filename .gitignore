@@ -3,3 +3,6 @@ node_modules/
 
 # ignore the dist directory for now
 dist/
+
+# ignore where we store environment vars
+.env
