@@ -30,6 +30,7 @@ export class MembershipItem {
 
 
     /** Constructor */
+    
     constructor(membershipNumber: string, membershipLevelName: string, membershipOfferingName: string, membershipSource: string, membershipExternalMembershipId: string,
                 membershipJoinDate: string, membershipStartDate: string, membershipExpirationDate: string, membershipDuration: string,
                 membershipStanding: string, membershipIsGifted: string, membershipProgramName: string, membershipCategoryName: string, membershipFund: string, membershipCampaign: string, membershipAppeal: string, customerCard: CustomerCard) {
