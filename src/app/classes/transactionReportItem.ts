@@ -1,4 +1,4 @@
-export class TransactionReportItem {
+    export class TransactionReportItem {
 
     /** Properties */
 
