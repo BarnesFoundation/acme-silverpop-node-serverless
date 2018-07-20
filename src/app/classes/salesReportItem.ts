@@ -17,16 +17,8 @@ export class SalesReportItem {
 
     /** Accessor methods */
 
-    public get checkInStatus(): string {
-        return this._checkInStatus;
-    }
-
-    public get conversionStatus(): string {
-        return this._conversionStatus;
-    }
-
-    public get orderNumber(): string {
-        return this._orderNumber;
-    }
+    public get checkInStatus(): string { return this._checkInStatus; }
+    public get conversionStatus(): string { return this._conversionStatus; }
+    public get orderNumber(): string { return this._orderNumber; }
 
 }
