@@ -1,5 +1,6 @@
 import { Config } from '@utils/config';
 import { Reports } from '@interfaces/reports';
+import { SalesReportItem } from '@classes/salesReportItem';
 import * as https from 'https';
 import * as request from 'request-promise-native';
 
@@ -9,16 +10,21 @@ const apiKey = Config.apiKey;
 
 function main() {
 
+    getReports();
+}
+
+function getReports() {
+
     // Endpoints for the API
     const salesReportEndpoint = 'b2b/analytics/report/execute/58c1a8c368d6093a3866db70';
     const transactionReportEndpoint = 'b2b/analytics/report/execute/58c1b3ab1f021613ddf20329';
     const membershipReportEndpoint = 'b2b/analytics/report/execute/58c1d056c1a3ef4d470db22e';
 
 
-    const url = apiRootUrl + salesReportEndpoint;
-    connectEndpoint(Reports.SALES_REPORT, url);
+    // const url = apiRootUrl + salesReportEndpoint;
+    // connectEndpoint(Reports.SALES_REPORT, url);
 
-
+    
 }
 
 function connectEndpoint(reportType: string, requestUrl: string) {
@@ -51,16 +57,25 @@ function connectEndpoint(reportType: string, requestUrl: string) {
         });
 }
 
+/** Processes a Sales Report */
 function processSalesReport(report) {
 
-    console.log(report);
+    // Empty list of Sales Report Items
+    const salesReportItems: SalesReportItem[] = [];
 
-    console.log('CheckInStatus', 'ConversionStatus', 'OrderNumber');
+    // Count of results in the report
+    const resultsCount = report.resultFieldList[0].values.length;
+
     for (let i = 0; i < 20; i++) {
-        console.log('Row: ', report.resultFieldList[0].values[i], report.resultFieldList[1].values[i], report.resultFieldList[2].values[i]);
+
+        // Extract fields from the values list
+        let checkInStatus = report.resultFieldList[0].values[i];
+        let conversionStatus = report.resultFieldList[1].values[i];
+        let orderNumber = report.resultFieldList[2].values[i];
+
+        // Create and store the new Sales Report Item
+        salesReportItems.push(new SalesReportItem(checkInStatus, conversionStatus, orderNumber)); 
     }
-
-
 }
 
 function processMembershipReport(report) {
