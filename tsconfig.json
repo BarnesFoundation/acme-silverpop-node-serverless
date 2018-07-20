@@ -15,6 +15,9 @@
       "@classes/*": [
         "app/classes/*"
       ],
+      "@enums/*": [
+        "app/enums/*"
+      ],
       "@interfaces/*": [
         "app/interfaces/*"
       ],
