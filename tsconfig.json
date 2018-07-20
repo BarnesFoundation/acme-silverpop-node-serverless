@@ -15,6 +15,9 @@
       "@classes/*": [
         "app/classes/*"
       ],
+      "@interfaces/*": [
+        "app/interfaces/*"
+      ],
       "@utils/*": [
         "utils/*"
       ]
