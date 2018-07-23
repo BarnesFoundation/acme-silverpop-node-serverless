@@ -212,6 +212,8 @@ function delineateItemsToCSV(items: any[]): string {
 
                     // Iterate through the properties and add to the csv
                     for (let property in value) {
+                        property = property.slice(property.indexOf('_') + 1);
+                        property = property.charAt(0).toUpperCase() + property.slice(1);
                         csv += property + ',';
                     }
 
@@ -222,7 +224,8 @@ function delineateItemsToCSV(items: any[]): string {
                         csv += '\r\n';
                     }
                 } else {
-
+                    property = property.slice(property.indexOf('_') + 1);
+                    property = property.charAt(0).toUpperCase() + property.slice(1);
                     csv += property + (propertiesCounter + 1 < numberOfProperties ? ',' : '\r\n')
                     propertiesCounter++;
                 }
@@ -265,22 +268,7 @@ function delineateItemsToCSV(items: any[]): string {
 /** Writes CSV to file */
 function writeCSVToFile(csv, reportType: ReportEnums) {
 
-    let fileName;
-
-    switch (reportType) {
-
-        case ReportEnums.MEMBERSHIP_REPORT:
-            fileName = ReportEnums.MEMBERSHIP_REPORT
-            break;
-
-        case ReportEnums.SALES_REPORT:
-            fileName = ReportEnums.SALES_REPORT
-            break;
-
-        case ReportEnums.TRANSACTION_REPORT:
-            fileName = ReportEnums.TRANSACTION_REPORT
-            break;
-    }
+    let fileName = reportType;
 
     fs.writeFile(fileName + '.csv', csv, (error) => {
         if (error) {
