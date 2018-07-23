@@ -22,19 +22,19 @@ function main() {
 function getReports() {
 
     // For each type of report
-    /* AcmeReportList.forEach(report => {
+    AcmeReportList.forEach(report => {
 
         const url = apiRootUrl + report.path;
 
         // Connect to the endpoint 
         getReportFromEndpoint(report.type, url);
-    }); */
+    });
 
-    getReportFromEndpoint(AcmeReportList[2].type, apiRootUrl + AcmeReportList[2].path);
+   //getReportFromEndpoint(AcmeReportList[2].type, apiRootUrl + AcmeReportList[2].path);
 }
 
 /** Fetches report from the specified endpoint */
-function getReportFromEndpoint(reportType: string, requestUrl: string) {
+function getReportFromEndpoint(reportType: ReportEnums, requestUrl: string) {
 
     // Configure options for the http request
     const options = {
@@ -49,27 +49,31 @@ function getReportFromEndpoint(reportType: string, requestUrl: string) {
     request.get(options)
         .then((response) => {
 
+            let items;
+
             // Process the response based on the report type 
             switch (reportType) {
 
                 case ReportEnums.SALES_REPORT:
-                    processSalesReport(response);
+                    items = processSalesReport(response);
                     break;
 
                 case ReportEnums.MEMBERSHIP_REPORT:
-                    const membershipReportItems = processMembershipReport(response);
-                    delineateItemsToCSV(membershipReportItems);
+                    items = processMembershipReport(response);
                     break;
 
                 case ReportEnums.TRANSACTION_REPORT:
-                    processTransactionReport(response);
+                    items = processTransactionReport(response);
                     break;
             }
+
+            const csv = delineateItemsToCSV(items);
+            writeCSVToFile(csv, reportType);
         });
 }
 
 /** Processes the Sales Report */
-function processSalesReport(report) {
+function processSalesReport(report): SalesReportItem[] {
 
     // Empty list of Sales Report Items
     const salesReportItems: SalesReportItem[] = [];
@@ -88,10 +92,11 @@ function processSalesReport(report) {
         // Create new Sales Report Item and store it
         salesReportItems.push(new SalesReportItem(checkInStatus, conversionStatus, orderNumber));
     }
+    return salesReportItems;
 }
 
 /** Process the Transaction Report */
-function processTransactionReport(report) {
+function processTransactionReport(report): TransactionReportItem[] {
 
     // Empty list of Transaction Report Items
     const transactionReportItems: TransactionReportItem[] = [];
@@ -131,6 +136,7 @@ function processTransactionReport(report) {
             couponCode, couponName, eventName, eventStartTime, ticketType, addOn, quantity, discountedUnitPrice, paymentAmount, email, eventTemplateCustomField2, transactionId, orderNumber, 'checkInStatus',
             'conversionStatus', transactionItemId, transactionDate));
     }
+    return transactionReportItems;
 }
 
 /** Process the Membership Report */
@@ -183,7 +189,7 @@ function processMembershipReport(report): MembershipReportItem[] {
 }
 
 /** Delineates report items to CSV format */
-function delineateItemsToCSV(items: any[]) {
+function delineateItemsToCSV(items: any[]): string {
 
     // Empty csv
     let csv = '';
@@ -198,17 +204,16 @@ function delineateItemsToCSV(items: any[]) {
         // If this is the first object row, generate the headings
         if (row == 0) {
 
-            // Iterate through the properties
+            // Iterate through the properties of the object
             for (let property in itemObject) {
 
                 let value = itemObject[property];
 
-                // If the property value is an object itself
+                // If the value of the property is an object itself
                 if (typeof (value) === 'object') {
 
                     // Iterate through the properties and add to the csv
                     for (let property in value) {
-
                         csv += property + ',';
                     }
 
@@ -224,9 +229,11 @@ function delineateItemsToCSV(items: any[]) {
                     propertiesCounter++;
                 }
             }
-        } else {
+        }
+        // For all other rows
+        else {
 
-            // Iterate through the properties
+            // Iterate through the properties of the object
             for (let property in itemObject) {
 
                 let value = itemObject[property];
@@ -236,7 +243,6 @@ function delineateItemsToCSV(items: any[]) {
 
                     // Iterate through the properties and add the values to the csv
                     for (let property in value) {
-
                         csv += value[property] + ',';
                     }
 
@@ -255,13 +261,30 @@ function delineateItemsToCSV(items: any[]) {
         }
     }
 
-    writeCSVToFile(csv);
+    return csv;
 }
 
 /** Writes CSV to file */
-function writeCSVToFile(csv) {
+function writeCSVToFile(csv, reportType: ReportEnums) {
 
-    fs.writeFile('file.csv', csv, (error) => {
+    let fileName;
+
+    switch (reportType) {
+
+        case ReportEnums.MEMBERSHIP_REPORT:
+            fileName = ReportEnums.MEMBERSHIP_REPORT
+            break;
+
+        case ReportEnums.SALES_REPORT:
+            fileName = ReportEnums.SALES_REPORT
+            break;
+
+        case ReportEnums.TRANSACTION_REPORT:
+            fileName = ReportEnums.TRANSACTION_REPORT
+            break;
+    }
+
+    fs.writeFile(fileName + '.csv', csv, (error) => {
         if (error) {
             console.log(error);
         } else {
