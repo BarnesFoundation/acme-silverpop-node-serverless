@@ -1,4 +1,4 @@
-import { ReportEnums } from '@enums/report.enums';
+import { ReportEnums } from 'app/enums/report.enums';
 
 interface AcmeReport {
 

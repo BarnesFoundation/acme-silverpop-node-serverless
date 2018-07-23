@@ -1,6 +1,6 @@
-import { CustomerCard } from '@classes/customerCard';
+import { CustomerCard } from 'app/classes/customerCard';
 
-export class MembershipItem {
+export class MembershipReportItem {
 
     /** Properties */
 
