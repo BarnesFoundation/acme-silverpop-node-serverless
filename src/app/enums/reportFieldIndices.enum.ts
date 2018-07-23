@@ -40,4 +40,34 @@ enum SalesReportFieldIndices {
     OrderNumber = 2
 }
 
-export { TransactionReportFieldIndices, SalesReportFieldIndices }
+enum MembershipReportFieldIndices {
+
+    MembershipNumber = 0,
+    MembershipLevelName = 1,
+    MembershipOfferingName = 2,
+    MembershipSource = 3,
+    MembershipExternalMembershipId = 4,
+    MembershipJoinDate = 5,
+    MembershipStartDate = 6,
+    MembershipExpirationDate = 7,
+    MembershipDuration = 8,
+    MembershipStanding = 9,
+    MembershipIsGifted = 10,
+    RE_MembershipProgramName = 11,
+    RE_MembershipCategoryName = 12,
+    RE_MembershipFund = 13,
+    RE_MembershipCampaign = 14,
+    RE_MembershipAppeal = 15,
+    CardType = 16,
+    CardName = 17,
+    CardStartDate = 18,
+    CardExpirationDate = 19,
+    CardCustomerPrimaryCity = 20,
+    CardCustomerPrimaryState = 21,
+    CardCustomerPrimaryZip = 22,
+    CardCustomerEmail = 23,
+    CardCustomerFirstName = 24,
+    CardCustomerLastName = 25
+}
+
+export { TransactionReportFieldIndices, SalesReportFieldIndices, MembershipReportFieldIndices }
