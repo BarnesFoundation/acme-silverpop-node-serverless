@@ -8,7 +8,7 @@ import { TransactionReportItem } from '@classes/transactionReportItem';
 import { CustomerCard } from '@classes/customerCard';
 import * as request from 'request-promise-native';
 import * as fs from 'fs';
-
+import * as child from 'child_process';
 
 const apiRootUrl = Config.apiRootUrl;
 const apiKey = Config.apiKey;
@@ -22,15 +22,13 @@ function main() {
 function getReports() {
 
     // For each type of report
-    AcmeReportList.forEach(report => {
+    for (let i = 0; i < AcmeReportList.length; i ++) {
 
-        const url = apiRootUrl + report.path;
+        const url = apiRootUrl + AcmeReportList[i].path;
 
         // Connect to the endpoint 
-        getReportFromEndpoint(report.type, url);
-    });
-
-   //getReportFromEndpoint(AcmeReportList[2].type, apiRootUrl + AcmeReportList[2].path);
+        getReportFromEndpoint(AcmeReportList[i].type, url);
+    }
 }
 
 /** Fetches report from the specified endpoint */
