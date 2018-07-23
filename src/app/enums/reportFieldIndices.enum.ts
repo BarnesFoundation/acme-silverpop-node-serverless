@@ -33,4 +33,11 @@ enum TransactionReportFieldIndices {
     TransactionDate = 30,
 }
 
-export { TransactionReportFieldIndices }
+enum SalesReportFieldIndices {
+
+    CheckInStatus = 0,
+    ConversionStatus = 1,
+    OrderNumber = 2
+}
+
+export { TransactionReportFieldIndices, SalesReportFieldIndices }
