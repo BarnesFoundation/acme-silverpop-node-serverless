@@ -1,7 +1,7 @@
 import { Config } from '@utils/config';
 import { ReportEnums } from '@enums/report.enums';
 import { AcmeReport, AcmeReportList } from '@interfaces/acmeReport.interface'
-import { TransactionReportFieldIndices } from '@enums/transactionReportFieldIndices.enum';
+import { TransactionReportFieldIndices as t, SalesReportFieldIndices as s } from '@enums/reportFieldIndices.enum';
 import { SalesReportItem } from '@classes/salesReportItem';
 import { TransactionReportItem } from '@classes/transactionReportItem';
 import * as request from 'request-promise-native';
@@ -16,15 +16,17 @@ function main() {
 
 function getReports() {
 
+    // For each type of report
     AcmeReportList.forEach(report => {
 
         const url = apiRootUrl + report.path;
 
-        connectEndpoint(report.type, url);
+        // Connect to the endpoint 
+        getReportFromEndpoint(report.type, url);
     });
 }
 
-function connectEndpoint(reportType: string, requestUrl: string) {
+function getReportFromEndpoint(reportType: string, requestUrl: string) {
 
     // Configure options for the http request
     const options = {
@@ -63,15 +65,16 @@ function processSalesReport(report) {
     // Empty list of Sales Report Items
     const salesReportItems: SalesReportItem[] = [];
 
-    // Count of results in the report
+    // List and count of results in the report
+    const results = report.resultFieldList;
     const resultsCount = 20 // report.resultFieldList[0].values.length;
 
     for (let i = 0; i < resultsCount; i++) {
 
         // Extract fields from the values list
-        let checkInStatus = report.resultFieldList[0].values[i];
-        let conversionStatus = report.resultFieldList[1].values[i];
-        let orderNumber = report.resultFieldList[2].values[i];
+        let checkInStatus = results[s.CheckInStatus].values[i];
+        let conversionStatus = results[s.ConversionStatus].values[i];
+        let orderNumber = results[s.OrderNumber].values[i];
 
         // Create new Sales Report Item and store it
         salesReportItems.push(new SalesReportItem(checkInStatus, conversionStatus, orderNumber));
@@ -82,9 +85,6 @@ function processTransactionReport(report) {
 
     // Empty list of Transaction Report Items
     const transactionReportItems: TransactionReportItem[] = [];
-
-    // Enums for the fields indices
-    const t = TransactionReportFieldIndices;
 
     // List and count of results in the report
     const results = report.resultFieldList;
@@ -126,7 +126,7 @@ function processTransactionReport(report) {
 function processMembershipReport(report) {
     /** to do */
 
-    console.log(report);
+    //console.log(report);
 }
 
 
