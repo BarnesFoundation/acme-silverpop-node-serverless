@@ -7,6 +7,7 @@ import { MembershipReportItem } from '@classes/membershipReportItem';
 import { TransactionReportItem } from '@classes/transactionReportItem';
 import { CustomerCard } from '@classes/customerCard';
 import * as request from 'request-promise-native';
+import * as fs from 'fs';
 
 
 const apiRootUrl = Config.apiRootUrl;
@@ -56,7 +57,8 @@ function getReportFromEndpoint(reportType: string, requestUrl: string) {
                     break;
 
                 case ReportEnums.MEMBERSHIP_REPORT:
-                    processMembershipReport(response);
+                    const membershipReportItems = processMembershipReport(response);
+                    delineateItemsToCSV(membershipReportItems);
                     break;
 
                 case ReportEnums.TRANSACTION_REPORT:
@@ -76,7 +78,7 @@ function processSalesReport(report) {
     const results = report.resultFieldList;
     const resultsCount = 20 // report.resultFieldList[0].values.length;
 
-    for (let i = 0; i < resultsCount; i ++) {
+    for (let i = 0; i < resultsCount; i++) {
 
         // Extract fields from the values list
         let checkInStatus = results[s.CheckInStatus].values[i];
@@ -98,7 +100,7 @@ function processTransactionReport(report) {
     const results = report.resultFieldList;
     const resultsCount = 20; // report.resultFieldList[0].values.length;
 
-    for (let i = 0; i < resultsCount; i ++) {
+    for (let i = 0; i < resultsCount; i++) {
 
         let accountName = results[t.OrganizationName].values[i];
         let accountCategoryName = results[t.OrganizationCategoryName].values[i];
@@ -132,16 +134,16 @@ function processTransactionReport(report) {
 }
 
 /** Process the Membership Report */
-function processMembershipReport(report) {
-    
+function processMembershipReport(report): MembershipReportItem[] {
+
     // Empty list of Membership Report items
     const membershipReportItems: MembershipReportItem[] = [];
 
     // List and count of results in the report
     const results = report.resultFieldList;
     const resultsCount = 20; // report.resultFieldList[0].values.length;
-    
-    for (let i = 0; i < resultsCount; i ++) {
+
+    for (let i = 0; i < resultsCount; i++) {
 
         let membershipNumber = results[m.MembershipNumber].values[i];
         let membershipLevelName = results[m.MembershipLevelName].values[i];
@@ -159,7 +161,7 @@ function processMembershipReport(report) {
         let membershipFund = results[m.RE_MembershipFund].values[i];
         let membershipCampaign = results[m.RE_MembershipCampaign].values[i];
         let membershipAppeal = results[m.RE_MembershipAppeal].values[i];
-        
+
         // Customer Card values
         let cardType = results[m.CardType].values[i];
         let cardName = results[m.CardName].values[i];
@@ -172,15 +174,100 @@ function processMembershipReport(report) {
 
         // Create new Customer Card
         const customerCard = new CustomerCard(cardType, cardName, cardStartDate, cardExpirationDate, cardCustomerPrimaryCity, cardCustomerPrimaryState, cardCustomerPrimaryZip, cardCustomerEmail);
-        
+
         // Create new Membership Report Item and store it
         membershipReportItems.push(new MembershipReportItem(membershipNumber, membershipLevelName, membershipOfferingName, membershipSource, membershipExternalMembershipId, membershipJoinDate, membershipStartDate,
             membershipExpirationDate, membershipDuration, membershipStanding, membershipIsGifted, membershipProgramName, membershipCategoryName, membershipFund, membershipCampaign, membershipAppeal, customerCard));
     }
-
-    console.log(membershipReportItems[0]);
+    return membershipReportItems;
 }
 
+/** Delineates report items to CSV format */
+function delineateItemsToCSV(items: any[]) {
 
+    // Empty csv
+    let csv = '';
+
+    // Iterate through each object row in the list
+    for (let row = 0; row < items.length; row++) {
+
+        let itemObject = items[row];
+        let numberOfProperties = Object.keys(itemObject).length;
+        let propertiesCounter = 0;
+
+        // If this is the first object row, generate the headings
+        if (row == 0) {
+
+            // Iterate through the properties
+            for (let property in itemObject) {
+
+                let value = itemObject[property];
+
+                // If the property value is an object itself
+                if (typeof (value) === 'object') {
+
+                    // Iterate through the properties and add to the csv
+                    for (let property in value) {
+
+                        csv += property + ',';
+                    }
+
+                    propertiesCounter++;
+
+                    // If this was the last property in the object
+                    if (propertiesCounter + 1 > numberOfProperties) {
+                        csv += '\r\n';
+                    }
+                } else {
+
+                    csv += property + (propertiesCounter + 1 < numberOfProperties ? ',' : '\r\n')
+                    propertiesCounter++;
+                }
+            }
+        } else {
+
+            // Iterate through the properties
+            for (let property in itemObject) {
+
+                let value = itemObject[property];
+
+                // If the property value is an object itself
+                if (typeof (value) === 'object') {
+
+                    // Iterate through the properties and add the values to the csv
+                    for (let property in value) {
+
+                        csv += value[property] + ',';
+                    }
+
+                    propertiesCounter++;
+
+                    // If this was the last property in the object
+                    if (propertiesCounter + 1 > numberOfProperties) {
+                        csv += '\r\n';
+                    }
+                } else {
+
+                    csv += itemObject[property] + (propertiesCounter + 1 < numberOfProperties ? ',' : '\r\n')
+                    propertiesCounter++;
+                }
+            }
+        }
+    }
+
+    writeCSVToFile(csv);
+}
+
+/** Writes CSV to file */
+function writeCSVToFile(csv) {
+
+    fs.writeFile('file.csv', csv, (error) => {
+        if (error) {
+            console.log(error);
+        } else {
+            console.log('File created');
+        }
+    });
+}
 
 main(); 
