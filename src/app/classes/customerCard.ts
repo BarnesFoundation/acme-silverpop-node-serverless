@@ -14,7 +14,8 @@ export class CustomerCard {
     
     /** Constructor */
     
-    constructor(cardType: string, cardName: string, cardStartDate: string, cardExpirationDate: string, cardCustomerPrimaryCity: string, cardCustomerPrimaryState: string, cardCustomerPrimaryZip: string, cardCustomerEmail: string) {
+    constructor(cardType: string, cardName: string, cardStartDate: string, cardExpirationDate: string, 
+        cardCustomerPrimaryCity: string, cardCustomerPrimaryState: string, cardCustomerPrimaryZip: string, cardCustomerEmail: string) {
 
         this._cardType = cardType;
         this._cardName = cardName;
