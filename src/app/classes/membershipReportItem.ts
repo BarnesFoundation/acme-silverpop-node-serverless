@@ -1,4 +1,4 @@
-import { CustomerCard } from 'app/classes/customerCard';
+import { CustomerCard } from '@classes/customerCard';
 
 export class MembershipReportItem {
 
