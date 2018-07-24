@@ -1,6 +1,6 @@
 import { Config } from '@utils/config';
 import { ReportEnums } from '@enums/report.enums';
-import { AcmeReport, AcmeReportList } from '@interfaces/acmeReport.interface'
+import { AcmeReportList } from '@interfaces/acmeReport.interface'
 import { TransactionReportFieldIndices as t, SalesReportFieldIndices as s, MembershipReportFieldIndices as m } from '@enums/reportFieldIndices.enum';
 import { SalesReportItem } from '@classes/salesReportItem';
 import { MembershipReportItem } from '@classes/membershipReportItem';
@@ -8,7 +8,6 @@ import { TransactionReportItem } from '@classes/transactionReportItem';
 import { CustomerCard } from '@classes/customerCard';
 import * as request from 'request-promise-native';
 import * as fs from 'fs';
-import * as child from 'child_process';
 
 const apiRootUrl = Config.apiRootUrl;
 const apiKey = Config.apiKey;
