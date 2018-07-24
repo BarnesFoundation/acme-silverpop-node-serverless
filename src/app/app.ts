@@ -277,3 +277,5 @@ function writeCSVToFile(csv, reportType: ReportEnums) {
         }
     });
 }
+
+main();
