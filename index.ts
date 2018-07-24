@@ -1,7 +1,5 @@
-import { main } from './app/app';
+import { main } from './src/app/app';
 
 exports.handler = async (event) => {
     main();
 }
-
-main();
