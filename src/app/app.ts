@@ -12,7 +12,7 @@ import * as fs from 'fs';
 const apiRootUrl = Config.apiRootUrl;
 const apiKey = Config.apiKey;
 
-function main() {
+export function main() {
 
     getReports();
 }
@@ -277,5 +277,3 @@ function writeCSVToFile(csv, reportType: ReportEnums) {
         }
     });
 }
-
-main(); 
