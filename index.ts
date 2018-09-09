@@ -1,19 +1,8 @@
-import { main } from './src/app/app';
+require('./tsconfig-paths-bootstrap'); 
 
-const exec = require('child_process').exec;
+import { main } from '@app/app';
 
 exports.handler = async (event) => {
 
-    let command = 'node -r ./tsconfig-paths-bootstrap.js src/app/app.js';
-
-    exec(command, function (error, stdout, stderr) {
-
-        if (stderr || error) {
-            console.log(error);
-        } else {
-            console.log(`stdout: ${stdout}`);
-        }
-    });
+    main();
 }
-
-exports.handler();

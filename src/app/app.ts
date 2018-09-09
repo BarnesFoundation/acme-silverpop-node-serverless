@@ -7,14 +7,13 @@ import { MembershipReportItem } from '@classes/membershipReportItem';
 import { TransactionReportItem } from '@classes/transactionReportItem';
 import { CustomerCard } from '@classes/customerCard';
 import * as request from 'request-promise-native';
+import ssh2SFTPClient = require('ssh2-sftp-client');
 import * as fs from 'fs';
-
-const apiRootUrl = Config.apiRootUrl;
-const apiKey = Config.apiKey;
 
 export function main() {
 
     getReports();
+    // connectSFTP();
 }
 
 /** Iterates fetching through the list of available report types */
@@ -23,7 +22,7 @@ function getReports() {
     // For each type of report
     for (let i = 0; i < AcmeReportList.length; i ++) {
 
-        const url = apiRootUrl + AcmeReportList[i].path;
+        const url = Config.apiRootUrl + Config.apiReportEndpoint + AcmeReportList[i].path;
 
         // Connect to the endpoint 
         getReportFromEndpoint(AcmeReportList[i].type, url);
@@ -38,35 +37,13 @@ function getReportFromEndpoint(reportType: ReportEnums, requestUrl: string) {
         url: requestUrl,
         headers: {
             'Accept': 'application/json',
-            'x-acme-api-key': apiKey
+            'x-acme-api-key': Config.apiKey
         }, json: true
     }
 
     // Execute the request
     request.get(options)
-        .then((response) => {
-
-            let items;
-
-            // Process the response based on the report type 
-            switch (reportType) {
-
-                case ReportEnums.SALES_REPORT:
-                    items = processSalesReport(response);
-                    break;
-
-                case ReportEnums.MEMBERSHIP_REPORT:
-                    items = processMembershipReport(response);
-                    break;
-
-                case ReportEnums.TRANSACTION_REPORT:
-                    items = processTransactionReport(response);
-                    break;
-            }
-
-            const csv = delineateItemsToCSV(items);
-            writeCSVToFile(csv, reportType);
-        });
+        .then((response) => {writeCSVToFile(response, reportType);});
 }
 
 /** Processes the Sales Report */
@@ -273,9 +250,33 @@ function writeCSVToFile(csv, reportType: ReportEnums) {
         if (error) {
             console.log(error);
         } else {
-            console.log('File created');
+            console.log('File created: ' + fileName);
         }
     });
 }
 
-main();
+/** Connects to the Watson Campaign Automation SFTP site */
+function uploadFileToSFTP() {
+
+    let sftp = new ssh2SFTPClient();
+    let credentials = {
+        host: Config.sftpHost,
+        port: 22,
+        username: Config.sftpUsername,
+        password: Config.sftpPassword
+    };
+
+    sftp.connect(credentials)
+        .then(() => {
+            // Upload the file
+            // return sftp.put('./nodemon.json', '/upload/nodemon.json')
+        })
+        .then((response) => {
+            console.log('Success');
+        })
+        .catch((error) => {
+            console.log('An error occurred authenticating with SFTP', error);
+        });
+}
+
+main(); 
