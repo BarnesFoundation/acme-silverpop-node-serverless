@@ -14,6 +14,7 @@ module.exports = {
   resolve: {
     extensions: ['.js', '.jsx', '.json', '.ts', '.tsx'],
     alias: {
+      '@app': path.resolve(__dirname, 'src/app/'),
       '@classes': path.resolve(__dirname, 'src/app/classes/'),
       '@enums': path.resolve(__dirname, 'src/app/enums/'),
       '@interfaces': path.resolve(__dirname, 'src/app/interfaces/'),
