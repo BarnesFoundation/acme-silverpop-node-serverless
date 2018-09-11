@@ -1,8 +1,9 @@
-# ignore node_modules directory
-node_modules/
+# package directories
+node_modules
+jspm_packages
 
-# ignore the dist directory for now
-dist/
+# Serverless directories
+.serverless
 
-# ignore where we store environment vars
-.env
+# Webpack directories
+.webpack
