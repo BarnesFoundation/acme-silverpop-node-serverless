@@ -1,5 +1,5 @@
 import * as request from 'request-promise-native';
-import ssh2SFTPClient = require('ssh2-sftp-client');
+import * as ssh2SFTPClient  from 'ssh2-sftp-client';
 import * as fs from 'fs';
 
 import { Config } from '@utils/config';
@@ -7,7 +7,7 @@ import { ReportEnums } from '@enums/report.enums';
 import { AcmeReportList } from '@interfaces/acmeReport.interface'
 
 
-export function main() {
+function main() {
 
     iterateReports();
     // connectSFTP();
@@ -85,4 +85,4 @@ function uploadFileToSFTP() {
         });
 }
 
-main(); 
+export { main };
