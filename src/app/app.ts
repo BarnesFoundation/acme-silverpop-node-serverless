@@ -1,12 +1,13 @@
 import * as request from 'request-promise-native';
 import * as ssh2SFTPClient from 'ssh2-sftp-client';
 
+import { Callback } from 'aws-lambda';
+
 import { Config } from '@utils/config';
 import { ReportEnums } from '@enums/report.enums';
 import { AcmeReportList } from '@interfaces/acmeReport.interface'
 
-
-async function main() {
+async function main(cb: Callback) {
 
     // Get the report objects
     let transactionReport = AcmeReportList.transactionReport;
@@ -18,10 +19,19 @@ async function main() {
     let membershipCSV = await getReportFromEndpoint(transactionReport.type, constructReportUrl(transactionReport.path));
     let salesCSV = await getReportFromEndpoint(salesReport.type, constructReportUrl(salesReport.path));
 
+
     // Upload the reports to the SFTP site
-    uploadToSFTP(salesCSV, salesReport.type);
-    uploadToSFTP(transactionCSV, transactionReport.type);
-    uploadToSFTP(membershipCSV, membershipReport.type);
+    try {
+        await uploadToSFTP(transactionCSV, transactionReport.type);
+        await uploadToSFTP(membershipCSV, membershipReport.type);
+        await uploadToSFTP(salesCSV, salesReport.type);
+    }
+    catch (error) {
+        console.log('An error occurred uploading the reports to the SFTP', error);
+    }
+
+
+    cb(null, 'Finished upload all files to SFTP');
 }
 
 /** Iterates fetching through the list of available report types */
@@ -43,7 +53,7 @@ function getReportFromEndpoint(reportType: ReportEnums, requestUrl: string): req
 
     // Await the response for the csv data from the request
     try {
-         return request.get(options)
+        return request.get(options)
     }
     catch (error) {
         console.log('An error occurred: ', error);
@@ -51,11 +61,9 @@ function getReportFromEndpoint(reportType: ReportEnums, requestUrl: string): req
 }
 
 /** Connects to the Watson Campaign Automation SFTP site */
-function uploadToSFTP(csv, reportType) {
+async function uploadToSFTP(csv, reportType) {
 
-    // Setup sftp client
     let sftp = new ssh2SFTPClient();
-
     let credentials = {
         host: Config.sftpHost,
         port: 22,
@@ -73,17 +81,9 @@ function uploadToSFTP(csv, reportType) {
     stream.push(csv);
     stream.push(null);
 
-    sftp.connect(credentials)
-        .then(() => {
-            return sftp.put(stream, fileName)
-        })
-        .then((response) => {
-            console.log('Successfully wrote ' + fileName + ' to SFTP');
-            sftp.end();
-        })
-        .catch((error) => {
-            console.log('An error occurred with the SFTP', error);
-        });
+    await sftp.connect(credentials);
+    await sftp.put(stream, fileName);
+    await sftp.end();
 }
 
 export { main as Main };
