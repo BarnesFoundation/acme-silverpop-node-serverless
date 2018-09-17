@@ -1,5 +1,5 @@
 import * as request from 'request-promise-native';
-import * as ssh2SFTPClient  from 'ssh2-sftp-client';
+import * as ssh2SFTPClient from 'ssh2-sftp-client';
 import * as fs from 'fs';
 
 import { Config } from '@utils/config';
@@ -7,27 +7,29 @@ import { ReportEnums } from '@enums/report.enums';
 import { AcmeReportList } from '@interfaces/acmeReport.interface'
 
 
-function main() {
+async function main() {
 
-    iterateReports();
-    // connectSFTP();
+    let transactionReport = AcmeReportList.transactionReport;
+    let membershipReport = AcmeReportList.membershipReport;
+    let salesReport = AcmeReportList.salesReport;
+
+
+    let transactionCSV = await getReportFromEndpoint(membershipReport.type, constructReportUrl(membershipReport.path));
+    let membershipCSV = await getReportFromEndpoint(transactionReport.type, constructReportUrl(transactionReport.path));
+    let salesCSV = await getReportFromEndpoint(salesReport.type, constructReportUrl(salesReport.path));
+
+    uploadToSFTP(salesCSV, salesReport.type);
+    uploadToSFTP(transactionCSV, transactionReport.type);
+    uploadToSFTP(membershipCSV, membershipReport.type);
 }
 
 /** Iterates fetching through the list of available report types */
-function iterateReports() {
-
-    // For each type of report
-    for (let i = 0; i < AcmeReportList.length; i++) {
-
-        const url = Config.apiRootUrl + Config.apiReportEndpoint + AcmeReportList[i].path;
-
-        // Connect to the endpoint 
-        getReportFromEndpoint(AcmeReportList[i].type, url);
-    }
+function constructReportUrl(path) {
+    return Config.apiRootUrl + Config.apiReportEndpoint + path;
 }
 
 /** Fetches report from the specified endpoint */
-async function getReportFromEndpoint(reportType: ReportEnums, requestUrl: string) {
+function getReportFromEndpoint(reportType: ReportEnums, requestUrl: string): request.RequestPromise<any> {
 
     // Configure options for the http request
     const options = {
@@ -40,31 +42,19 @@ async function getReportFromEndpoint(reportType: ReportEnums, requestUrl: string
 
     // Await the response for the csv data from the request
     try {
-        writeCSVToFile(await request.get(options), reportType);
+         return request.get(options)
     }
     catch (error) {
         console.log('An error occurred: ', error);
     }
 }
 
-/** Writes CSV to file */
-function writeCSVToFile(csv, reportType: ReportEnums) {
-
-    let fileName = reportType;
-
-    fs.writeFile(fileName + '.csv', csv, (error) => {
-        if (error) {
-            console.log(error);
-        } else {
-            console.log('File created: ' + fileName);
-        }
-    });
-}
-
 /** Connects to the Watson Campaign Automation SFTP site */
-function uploadFileToSFTP() {
+function uploadToSFTP(csv, reportType) {
 
+    // Setup sftp client
     let sftp = new ssh2SFTPClient();
+
     let credentials = {
         host: Config.sftpHost,
         port: 22,
@@ -72,17 +62,27 @@ function uploadFileToSFTP() {
         password: Config.sftpPassword
     };
 
+    // Setup stream for writing
+    let Readable = require('stream').Readable;
+    let stream = new Readable;
+
+    let fileName = '/upload/' + reportType + '.csv';
+
+    // Add the CSV to the stream and newline to signify end of stream
+    stream.push(csv);
+    stream.push(null);
+
     sftp.connect(credentials)
         .then(() => {
-            // Upload the file
-            // return sftp.put('./nodemon.json', '/upload/nodemon.json')
+            return sftp.put(stream, fileName)
         })
         .then((response) => {
-            console.log('Success');
+            console.log('Successfully wrote ' + fileName + ' to SFTP');
+            sftp.end();
         })
         .catch((error) => {
-            console.log('An error occurred authenticating with SFTP', error);
+            console.log('An error occurred with the SFTP', error);
         });
 }
 
-export { main };
+export { main as Main };
