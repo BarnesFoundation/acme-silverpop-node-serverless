@@ -6,9 +6,9 @@ import { Main } from './src/app/app';
  *  Repository: https://github.com/BarnesFoundation/acme-silverpop-node-serverless
  */
 
-export const acmeNightlySync: Handler = (event: APIGatewayEvent, context: Context, cb: Callback) => {
+export const index: Handler = (event: APIGatewayEvent, context: Context, cb: Callback) => {
   
   console.log('Executing reports');
 
-  Main();
+  Main(cb);
 }
