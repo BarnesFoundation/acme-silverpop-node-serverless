@@ -1,6 +1,5 @@
 import * as request from 'request-promise-native';
 import * as ssh2SFTPClient from 'ssh2-sftp-client';
-import * as fs from 'fs';
 
 import { Config } from '@utils/config';
 import { ReportEnums } from '@enums/report.enums';
@@ -9,15 +8,17 @@ import { AcmeReportList } from '@interfaces/acmeReport.interface'
 
 async function main() {
 
+    // Get the report objects
     let transactionReport = AcmeReportList.transactionReport;
     let membershipReport = AcmeReportList.membershipReport;
     let salesReport = AcmeReportList.salesReport;
 
-
+    // Retrieve the report CSVs from ACME
     let transactionCSV = await getReportFromEndpoint(membershipReport.type, constructReportUrl(membershipReport.path));
     let membershipCSV = await getReportFromEndpoint(transactionReport.type, constructReportUrl(transactionReport.path));
     let salesCSV = await getReportFromEndpoint(salesReport.type, constructReportUrl(salesReport.path));
 
+    // Upload the reports to the SFTP site
     uploadToSFTP(salesCSV, salesReport.type);
     uploadToSFTP(transactionCSV, transactionReport.type);
     uploadToSFTP(membershipCSV, membershipReport.type);
