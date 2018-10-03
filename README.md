@@ -13,7 +13,7 @@ The logic of the lambda function lives within the `src` directory, with the `han
 
 ## Development
 While developing, do the following
- - Use the command `serverless invoke local -f acmeNightlySync` in the to invoke the lambda function locally
+ - Use the command `serverless invoke local -f index` in the to invoke the lambda function locally
 
  
 ## Deployment
