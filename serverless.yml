@@ -14,3 +14,35 @@ provider:
 functions:
   index:
     handler: handler.index
+    timeout: 300
+    events:
+
+      # Scheduled event for the Sales Report
+      - schedule:
+          name: AcmeNightlySync-ScheduledEvent-SalesReportExecution
+          description: 'An event scheduled to run at midnight of each week day at 4 AM UTC | 12 AM UTC-4'
+          rate: cron(0 4 * * ? *)
+          enabled: true
+          input:
+            report: ACME Sales Report
+            reportId: SalesReport
+
+      # Scheduled event for the Transactions Report
+      - schedule:
+          name: AcmeNightlySync-ScheduledEvent-TransactionsReportExecution
+          description: 'An event scheduled to run at midnight of each week day at 4:01 AM UTC | 12:01 AM UTC-4'
+          rate: cron(1 4 * * ? *)
+          enabled: true
+          input: 
+            report: ACME Transactions Report
+            reportId: TransactionsReport
+
+      # Scheduled event for the Memberships Report
+      - schedule:
+          name: AcmeNightlySync-ScheduledEvent-MembershipsReportExecution
+          description: 'An event scheduled to run at midnight of each week day at 4:02 AM UTC | 12:02 AM UTC-4'
+          rate: cron(2 4 * * ? *)
+          enabled: true
+          input:
+            report: ACME Memberships Report
+            reportId: MembershipsReport
