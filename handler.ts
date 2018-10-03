@@ -1,4 +1,4 @@
-import { APIGatewayEvent, Callback, Context, Handler } from 'aws-lambda';
+import { Callback, Context, Handler } from 'aws-lambda';
 import { Main } from './src/app/app';
 
 /** This file is the entry point for the AWS Lambda function. When the lambda is executed, the acmeNightlySync function of this file is called.
@@ -6,9 +6,12 @@ import { Main } from './src/app/app';
  *  Repository: https://github.com/BarnesFoundation/acme-silverpop-node-serverless
  */
 
-export const index: Handler = (event: APIGatewayEvent, context: Context, cb: Callback) => {
-  
-  console.log('Executing reports');
+export const index: Handler = (event, context: Context, cb: Callback) => {
 
-  Main(cb);
+  let input = {
+    report: event.report,
+    reportId: event.reportId
+  }
+
+  Main(input, cb);
 }
