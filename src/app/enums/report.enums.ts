@@ -1,8 +1,8 @@
 enum ReportEnums {
     
     SALES_REPORT = 'SalesReport',
-    TRANSACTION_REPORT = 'TransactionReport',
-    MEMBERSHIP_REPORT = 'MembershipReport'
+    TRANSACTION_REPORT = 'TransactionsReport',
+    MEMBERSHIP_REPORT = 'MembershipsReport'
 } 
 
 export { ReportEnums }
