@@ -66,7 +66,8 @@ function getReportFromEndpoint(reportType: ReportEnums, requestUrl: string): req
         url: requestUrl,
         headers: {
             'Accept': 'application/json',
-            'x-acme-api-key': Config.apiKey
+            'x-acme-api-key': Config.apiKey,
+            'x-b2c-tenant-id': Config.apiTenantId
         }, json: true
     }
 
