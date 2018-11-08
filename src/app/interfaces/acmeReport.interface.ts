@@ -10,7 +10,7 @@ const AcmeReportList = {
 
     salesReport: {   // Sales Report
         type: ReportEnums.SALES_REPORT,
-        path: '58c1a8c368d6093a3866db70/zOrders Test - Source Memberships'
+        path: '58c1a8c368d6093a3866db70/zOrdersTest - Source:Sales'
     },
 
     transactionReport: {   // Transaction Report
