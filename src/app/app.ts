@@ -6,16 +6,25 @@ import { Callback } from 'aws-lambda';
 import { Config } from '@utils/config';
 import { Input } from '@interfaces/input.interface';
 import { ReportEnums } from '@enums/report.enums';
-import { AcmeReportList, AcmeReport } from '@interfaces/acmeReport.interface'
+import { AcmeReportList, AcmeReport } from '@interfaces/acmeReport.interface';
+
+import * as rp from './classes/reportProcessor';
 
 async function main(input: Input, cb: Callback) {
 
+    let reportId = input.reportId;
+
     // Set the report to be used for this execution
-    let report = setReport(input.reportId)
-    let fileName = report.type + '.csv';
+    let report = setReport(reportId)
+
+    // let fileName = report.type + '.csv';
+    let fileName = 'test.csv';
 
     // Retrieve the CSV for this report from ACME
-    let reportCSV = await getReportFromEndpoint(report.type, constructReportUrl(report.path))
+    let reportCSV = await getReportFromEndpoint(report.type, constructReportUrl(report.path));
+
+    // Apply report modifications
+    reportCSV = await modifyReport(reportCSV, reportId);
 
     // Upload the reports to the SFTP site
     let error;
@@ -23,10 +32,10 @@ async function main(input: Input, cb: Callback) {
     let result = (sftpUploadSuccess) ? 'Finished uploading ' + fileName + ' to the SFTP site' : 'Failed to upload ' + fileName + ' to the SFTP site';
 
     // Return success
-    if (sftpUploadSuccess) { cb(null, result); } 
-    
+    if (sftpUploadSuccess) { cb(null, result); }
+
     // Pass the error to AWS
-    else { cb(error, result) }   
+    else { cb(error, result); }
 }
 
 /** Sets the report to be executed and uploaded */
@@ -59,7 +68,7 @@ function constructReportUrl(path) {
 }
 
 /** Fetches report from the specified endpoint */
-function getReportFromEndpoint(reportType: ReportEnums, requestUrl: string): request.RequestPromise<any> {
+function getReportFromEndpoint(reportType: ReportEnums, requestUrl: string): request.RequestPromise<string> {
 
     // Configure options for the http request
     const options = {
@@ -112,7 +121,7 @@ async function uploadToSFTP(csv, csvName, possibleError) {
         successfulUpload = true;
     }
     catch (error) {
-        console.log('An error occurred uploading to ' + sftpPath + ' in the SFTP site' , error);
+        console.log('An error occurred uploading to ' + sftpPath + ' in the SFTP site', error);
 
         // Return that an error occurred during the sftp upload
         possibleError = error;
@@ -121,6 +130,46 @@ async function uploadToSFTP(csv, csvName, possibleError) {
     finally {
         return successfulUpload;
     }
+}
+
+/** Applies modifications to the passed report csv */
+async function modifyReport(reportCSV: string, reportId: string): Promise<string> {
+
+    let csv;
+
+    switch (reportId) {
+
+        case ReportEnums.MEMBERSHIP_REPORT: {
+
+            let uniqueIdentifier = 'CardCustomerEmail';
+
+            // Parse the csv into an array of objects
+            let modifiedCSV = await rp.parser(reportCSV);
+
+            // Remove guests
+            modifiedCSV = rp.removeGuests(modifiedCSV);
+
+            // Sort by card expiration date
+            modifiedCSV = rp.sortByExpirationDate(modifiedCSV);
+
+            // Remove duplicates
+            modifiedCSV = rp.removeDuplicates(modifiedCSV, uniqueIdentifier);
+
+            // Create csv string
+            csv = await rp.createCSV(modifiedCSV);
+
+            break;
+        }
+
+        case ReportEnums.SALES_REPORT: {
+            csv = reportCSV;
+        }
+
+        case ReportEnums.TRANSACTION_REPORT: {
+            csv = reportCSV;
+        }
+    }
+    return csv;
 }
 
 export { main as Main };
