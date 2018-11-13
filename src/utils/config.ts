@@ -17,6 +17,8 @@ const Config = {
     
     memberGuestEventTemplateId: process.env.MEMBER_GUEST_EVENT_TEMPLATE_ID,
     memberGuestTicketTypeId: process.env.MEMBER_GUEST_TICKET_TYPE_ID,
+
+    environment: process.env.ENV,
 };
 
 export { Config };
