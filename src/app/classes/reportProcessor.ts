@@ -1,6 +1,5 @@
 import * as parse from 'csv-parse';
 import * as stringify from 'csv-stringify';
-import { checkServerIdentity } from 'tls';
 
 /** Parses a provided csv string into an array of objects */
 export function parser(csv): Promise<any[]> {
@@ -35,12 +34,15 @@ export function removeGuests(csv: any[]) {
     });
 }
 
+/** Sorts the provided array by the MembershipExpirationDate in descending order */
 export function sortByExpirationDate(csv: any[]) {
     return csv.sort((a, b) => {
 
+        // Get the date of each row
         let aDate = new Date(a.MembershipExpirationDate);
         let bDate = new Date(b.MembershipExpirationDate);
 
+        // -1 so that it is in descending order
         if (aDate > bDate) { return -1; }
 
         if (bDate > aDate) { return 1; }
@@ -49,6 +51,7 @@ export function sortByExpirationDate(csv: any[]) {
     });
 }
 
+/** Transform a csv-like array and returns a csv formatted string */
 export function createCSV(records: any[]): Promise<string> {
     return new Promise((resolve, reject) => {
 
@@ -70,11 +73,11 @@ export function createCSV(records: any[]): Promise<string> {
 
             let row = [];
 
-            // Build the row by iterating and adding in its properties
+            // Build the row by iterating the object properties and adding them
             for (let j = 0; j < headers.length; j++) { row.push(records[i][headers[j].key]); }
 
             stringifier.write(row);
-        }
+        }    
 
         stringifier.end();
 
@@ -99,7 +102,8 @@ function generateHeaders(record: {}): { key: string }[] {
     return headers;
 }
 
-export function removeDuplicates(records: any[], key){
+/** Removes duplicate rows based on the provided unique key */
+export function removeDuplicates(records: any[], uniqueKey){
     
     // Array of encountered records and duplicates filtered out
     let encountered = [];
@@ -107,15 +111,19 @@ export function removeDuplicates(records: any[], key){
 
     for (let i = 0; i < records.length; i++) {
 
-        let index = records[i][key].toLowerCase();
+        let index = records[i][uniqueKey].toLowerCase();
 
         // If the record doesn't already exist in the encountered array, add it there and the filtered array
         if (typeof encountered[index] === 'undefined') {
 
-            // Add that we've encountered the index and add it to filtered set
+            // Add that we've encountered the index and add the data to filtered set
             encountered[index] = records[i];
             filteredSet.push(records[i]);
         }
     }
+
+    // Empty the encountered array
+    encountered = [];
+
     return filteredSet;
 }
