@@ -4,21 +4,24 @@ import * as ssh2SFTPClient from 'ssh2-sftp-client';
 import { Callback } from 'aws-lambda';
 
 import { Config } from '@utils/config';
+import { Convert } from '@utils/time';
 import { Input } from '@interfaces/input.interface';
 import { ReportEnums } from '@enums/report.enums';
 import { AcmeReportList, AcmeReport } from '@interfaces/acmeReport.interface';
 
-import * as rp from './classes/reportProcessor';
+import * as rp from '@classes/reportProcessor';
 
 async function main(input: Input, cb: Callback) {
+
+    let startTime = Date.now();
 
     let reportId = input.reportId;
 
     // Set the report to be used for this execution
     let report = setReport(reportId)
 
-    // let fileName = report.type + '.csv';
-    let fileName = 'test.csv';
+    // Determine the file name based on the environment 
+    let fileName = (Config.environment === "PRODUCTION") ? report.type + '.csv' : report.type + '-test.csv';
 
     // Retrieve the CSV for this report from ACME
     let reportCSV = await getReportFromEndpoint(report.type, constructReportUrl(report.path));
@@ -29,7 +32,11 @@ async function main(input: Input, cb: Callback) {
     // Upload the reports to the SFTP site
     let error;
     let sftpUploadSuccess = await uploadToSFTP(reportCSV, fileName, error);
-    let result = (sftpUploadSuccess) ? 'Finished uploading ' + fileName + ' to the SFTP site' : 'Failed to upload ' + fileName + ' to the SFTP site';
+
+    let endTime = Date.now();
+    let elapsedTime = Convert(endTime - startTime);
+
+    let result = (sftpUploadSuccess) ? 'Uploaded ' + fileName + ' to the SFTP site with elapsed time ' + elapsedTime : 'Failed to upload ' + fileName + ' to the SFTP site';
 
     // Return success
     if (sftpUploadSuccess) { cb(null, result); }
