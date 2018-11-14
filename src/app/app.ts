@@ -64,6 +64,10 @@ function setReport(reportId): AcmeReport {
         case ReportEnums.MEMBERSHIP_REPORT:
             report = AcmeReportList.membershipReport;
             break;
+
+        case ReportEnums.CONTACT_REPORT:
+            report = AcmeReportList.contactReport;
+            break;
     }
 
     return report;
@@ -150,34 +154,71 @@ async function modifyReport(reportCSV: string, reportId: string): Promise<string
 
             let uniqueIdentifier = 'CardCustomerEmail';
             let columnsToRemove = ['CardCustomerFirstName', 'CardCustomerLastName'];
+            let dateField = 'MembershipExpirationDate';
 
             // Parse the csv into an array of objects
-            let modifiedCSV = await rp.parser(reportCSV);
+            let csvArray = await rp.parser(reportCSV);
 
             // Remove guests
-            modifiedCSV = rp.removeGuests(modifiedCSV);
+            csvArray = rp.removeGuests(csvArray);
 
             // Sort by card expiration date
-            modifiedCSV = rp.sortByExpirationDate(modifiedCSV);
+            csvArray = rp.sortByDateField(csvArray, dateField);
 
             // Remove duplicates
-            modifiedCSV = rp.removeDuplicates(modifiedCSV, uniqueIdentifier);
+            csvArray = rp.removeDuplicates(csvArray, uniqueIdentifier);
 
             // Remove unneeded columns
-            modifiedCSV = rp.removeColumns(modifiedCSV, columnsToRemove);
+            csvArray = rp.removeColumns(csvArray, columnsToRemove);
 
             // Create csv string
-            csv = await rp.createCSV(modifiedCSV);
+            csv = await rp.createCSV(csvArray);
 
             break;
         }
 
         case ReportEnums.SALES_REPORT: {
             csv = reportCSV;
+
+            break;
         }
 
         case ReportEnums.TRANSACTION_REPORT: {
-            csv = reportCSV;
+
+            let columnsToRemove = ['ContactFirstName', 'ContactLastName', 'ZipCode', 'MembershipExternalId', 'MembershipPrimaryFirstName', 'MembershipPrimaryLastName', 'MembershipLevelName', 'MembershipOfferingName'];
+            let columnsSortOrder = [];
+
+            // Parse the csv into an array of objects
+            let csvArray = await rp.parser(reportCSV);
+
+            // Remove unneeded columns
+            csvArray = rp.removeColumns(csvArray, columnsToRemove);
+            
+            csv = await rp.createCSV(csvArray);
+
+            break;
+        }
+
+        case ReportEnums.CONTACT_REPORT: {
+
+            let dateField = 'TransactionDate';
+            let uniqueIdentifier = 'Email';
+
+            // Parse the csv into an array of objects
+            let csvArray = await rp.parser(reportCSV);
+
+            // Sort based on transaction date
+            csvArray = rp.sortByDateField(csvArray, dateField);
+
+            // Remove duplicates
+            csvArray = rp.removeDuplicates(csvArray, uniqueIdentifier)
+
+            // Create the persons array
+            let persons = rp.createPersonRecords(csvArray);
+
+            csv = await rp.createCSV(persons);
+
+            break;
         }
     }
     return csv;
