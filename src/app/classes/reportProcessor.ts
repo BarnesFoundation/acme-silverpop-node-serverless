@@ -103,7 +103,7 @@ function generateHeaders(record: {}): { key: string }[] {
 }
 
 /** Removes duplicate rows based on the provided unique key */
-export function removeDuplicates(records: any[], uniqueKey){
+export function removeDuplicates(records: any[], uniqueKey): any[] {
     
     // Array of encountered records and duplicates filtered out
     let encountered = [];
@@ -126,4 +126,16 @@ export function removeDuplicates(records: any[], uniqueKey){
     encountered = [];
 
     return filteredSet;
+}
+
+/** Removes the designated columns from each object in the array provided */
+export function removeColumns(records: {}[], columns: any[]): any[] {
+    
+    // Iterate through the records
+    for (let i = 0; i < records.length; i++) {
+
+        // Delete the columns from the record
+        for (let j = 0; j < columns.length; j++) { delete records[i][columns[j]]; };
+    }
+    return records; 
 }

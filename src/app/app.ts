@@ -149,6 +149,7 @@ async function modifyReport(reportCSV: string, reportId: string): Promise<string
         case ReportEnums.MEMBERSHIP_REPORT: {
 
             let uniqueIdentifier = 'CardCustomerEmail';
+            let columnsToRemove = ['CardCustomerFirstName', 'CardCustomerLastName'];
 
             // Parse the csv into an array of objects
             let modifiedCSV = await rp.parser(reportCSV);
@@ -161,6 +162,9 @@ async function modifyReport(reportCSV: string, reportId: string): Promise<string
 
             // Remove duplicates
             modifiedCSV = rp.removeDuplicates(modifiedCSV, uniqueIdentifier);
+
+            // Remove unneeded columns
+            modifiedCSV = rp.removeColumns(modifiedCSV, columnsToRemove);
 
             // Create csv string
             csv = await rp.createCSV(modifiedCSV);
