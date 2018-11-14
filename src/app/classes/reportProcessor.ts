@@ -1,6 +1,12 @@
 import * as parse from 'csv-parse';
 import * as stringify from 'csv-stringify';
 
+// import { Person } from '@interfaces/person.interface';
+import { Person } from '@classes/person.class';
+import { Transaction } from '@classes/transaction.class';
+import { Membership } from '@classes/membership.class';
+
+
 /** Parses a provided csv string into an array of objects */
 export function parser(csv): Promise<any[]> {
     return new Promise((resolve, reject) => {
@@ -12,7 +18,12 @@ export function parser(csv): Promise<any[]> {
         // Read in the stream for parsing
         parser.on('readable', () => {
             let record;
-            while (record = parser.read()) { output.push(record); }
+            while (record = parser.read()) {
+
+
+
+                output.push(record);
+            }
         });
 
         // Catch any error
@@ -27,6 +38,25 @@ export function parser(csv): Promise<any[]> {
     });
 }
 
+function objectFactory(r, objectType) {
+
+    switch (objectType) {
+
+        case 'Person':
+            return new Person(r.Email, r.ContactFirstName, r.ContactLastName, r.ZipCode);
+
+        case 'Transaction':
+            return new Transaction(r.AccountName, r.AccountCategoryName, r.TransactionAmount, r.DiscountedTransactionAmount, r.DiscountTransactionValue, r.SaleChannel, r.OrderItemType,
+                r.ItemName, r.CouponCode, r.CouponName, r.EventName, r.EventStartTime, r.TicketType, r.AddOn, r.DiscountedUnitPrice, r.PaymentAmount, r.Email, r.EventTemplateCustomerField2,
+                r.TransactionId, r.OrderNumber, '', '', r.TransactionItemId, r.TranaactionDate);
+
+        case 'Membership':
+                return new Membership(r.MembershipNumber, r.MembershipLevelName, r.MembershipOfferingName, r.MembershipSource, r.MembershipExternalMembershipId, r.MembershipJoinDate, r.MembershipStartDate, r.MembershipExpirationDate, r.MembershipDuration, r.MembershipStanding, r.MembershipIsGifted, r.RE_MembershipProgramName, r.RE_MembershipCategoryName, r.RE_MembershipFund, r.RE_MembershipCampaign, r.RE_MembershipAppeal, r.CardType, r.CardName, r.CardStartDate, r.CardExpirationDate, r.CardCustomerPrimaryCity, r.CardCustomerPrimaryState, r.CardCustomerPrimaryZip, r.CardCustomerEmail);
+        case 'Sale':
+                //return new Sale()
+    }
+}
+
 /** Removes guest rows from the provided csv array */
 export function removeGuests(csv: any[]) {
     return csv.filter((currentElement, index, array) => {
@@ -34,13 +64,13 @@ export function removeGuests(csv: any[]) {
     });
 }
 
-/** Sorts the provided array by the MembershipExpirationDate in descending order */
-export function sortByExpirationDate(csv: any[]) {
+/** Sorts the provided array by the provided date-type field, in descending order */
+export function sortByDateField(csv: any[], dateField) {
     return csv.sort((a, b) => {
 
         // Get the date of each row
-        let aDate = new Date(a.MembershipExpirationDate);
-        let bDate = new Date(b.MembershipExpirationDate);
+        let aDate = new Date(a[dateField]);
+        let bDate = new Date(b[dateField]);
 
         // -1 so that it is in descending order
         if (aDate > bDate) { return -1; }
@@ -77,7 +107,7 @@ export function createCSV(records: any[]): Promise<string> {
             for (let j = 0; j < headers.length; j++) { row.push(records[i][headers[j].key]); }
 
             stringifier.write(row);
-        }    
+        }
 
         stringifier.end();
 
@@ -103,22 +133,29 @@ function generateHeaders(record: {}): { key: string }[] {
 }
 
 /** Removes duplicate rows based on the provided unique key */
-export function removeDuplicates(records: any[], uniqueKey): any[] {
-    
+export function removeDuplicates(records: any[], uniqueField): any[] {
+
     // Array of encountered records and duplicates filtered out
     let encountered = [];
     let filteredSet = [];
 
     for (let i = 0; i < records.length; i++) {
 
-        let index = records[i][uniqueKey].toLowerCase();
+        let uniqueIndex: string = records[i][uniqueField].toLowerCase();
 
-        // If the record doesn't already exist in the encountered array, add it there and the filtered array
-        if (typeof encountered[index] === 'undefined') {
+        // Continue if the identfier field is blank space
+        if (uniqueIndex.trim().length == 0) { continue }
 
-            // Add that we've encountered the index and add the data to filtered set
-            encountered[index] = records[i];
-            filteredSet.push(records[i]);
+        // Othertise, process as expected
+        else {
+
+            // If the record doesn't already exist in the encountered array, add it there and the filtered array
+            if (typeof encountered[uniqueIndex] === 'undefined') {
+
+                // Add that we've encountered the index and add the data to filtered set
+                encountered[uniqueIndex] = records[i];
+                filteredSet.push(records[i]);
+            }
         }
     }
 
@@ -130,12 +167,32 @@ export function removeDuplicates(records: any[], uniqueKey): any[] {
 
 /** Removes the designated columns from each object in the array provided */
 export function removeColumns(records: {}[], columns: any[]): any[] {
-    
+
     // Iterate through the records
     for (let i = 0; i < records.length; i++) {
 
         // Delete the columns from the record
         for (let j = 0; j < columns.length; j++) { delete records[i][columns[j]]; };
     }
-    return records; 
+    return records;
+}
+
+export function createPersonRecords(records: any[]): Person[] {
+
+    let persons: Person[] = [];
+
+    for (let i = 0; i < records.length; i++) {
+
+        let transaction: any = records[i];
+
+        let person: Person = {
+            Email: transaction.Email,
+            ContactFirstName: transaction.ContactFirstName,
+            ContactLastName: transaction.ContactLastName,
+            ZipCode: transaction.ZipCode
+        };
+
+        persons.push(person);
+    }
+    return persons;
 }
