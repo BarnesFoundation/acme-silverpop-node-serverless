@@ -21,6 +21,11 @@ const AcmeReportList = {
     membershipReport: {   // Membership Report
         type: ReportEnums.MEMBERSHIP_REPORT,
         path: '58c1d056c1a3ef4d470db22e/zOrders Test - Source Memberships'
+    },
+
+    contactReport: {    // Contact Report
+        type: ReportEnums.CONTACT_REPORT,
+        path: '58c1b3ab1f021613ddf20329/zOrdersTest - Source:Transactions'
     }
 }
 
