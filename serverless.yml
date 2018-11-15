@@ -24,7 +24,7 @@ functions:
           rate: cron(0 4 * * ? *)
           enabled: true
           input:
-            report: ACME Sales Report
+            report: Sales
             reportId: SalesReport
 
       # Scheduled event for the Transactions Report
@@ -34,7 +34,7 @@ functions:
           rate: cron(1 4 * * ? *)
           enabled: true
           input: 
-            report: ACME Transactions Report
+            report: Transactions
             reportId: TransactionsReport
 
       # Scheduled event for the Memberships Report
@@ -44,5 +44,15 @@ functions:
           rate: cron(2 4 * * ? *)
           enabled: true
           input:
-            report: ACME Memberships Report
+            report: Memberships
             reportId: MembershipsReport
+
+      # Scheduled event for the Persons Report
+      - schedule:
+        name: AcmeNightlySync-ScheduledEvent-ContactsReportExecution
+        description: 'An event scheduled to run at midnight of each week day at 4:03 AM UTC | 12:03 AM UTC-4'
+        rate: cron(3 4 * * ? *)
+        enabled: true
+        input:
+          report: Contacts
+          reportId: ContactsReport
