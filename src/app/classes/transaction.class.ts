@@ -27,7 +27,7 @@ class Transaction {
     TransactionDate: string;
 
     constructor(AccountName: string, AccountCategoryName: string, TransactionAmount: string, DiscountedTransactionAmount: string, DiscountTransactionValue: string, SaleChannel: string,
-        OrderItemType: string, ItemName: string, CouponCode: string, CouponName: string, EventName: string, EventStartTime: string, TicketType: string, AddOn: string,  
+        OrderItemType: string, ItemName: string, CouponCode: string, CouponName: string, EventName: string, EventStartTime: string, TicketType: string, AddOn: string, Quantity: string, 
         DiscountedUnitPrice: string, PaymentAmount: string, Email: string, EventTemplateCustomField2: string, TransactionId: string, OrderNumber: string, CheckInStatus: string, 
         ConversionStatus: string, TransactionItemId: string, TransactionDate: string) {
 
@@ -45,6 +45,7 @@ class Transaction {
             this.EventStartTime = EventStartTime;
             this.TicketType = TicketType;
             this.AddOn = AddOn;
+            this.Quantity = Quantity;
             this.DiscountedUnitPrice = DiscountedUnitPrice;
             this.PaymentAmount = PaymentAmount;
             this.Email = Email;
