@@ -21,7 +21,7 @@ async function main(input: Input, cb: Callback) {
     let report = setReport(reportId)
 
     // Determine the file name based on the environment 
-    let fileName = (Config.environment === "PRODUCTION") ? report.type + '.csv' : report.type + '-test.csv';
+    let fileName = (Config.environment === "PRODUCTION") ? input.report + '.csv' : input.report + '-test.csv';
 
     // Retrieve the CSV for this report from ACME
     let reportCSV = await getReportFromEndpoint(report.type, constructReportUrl(report.path));
@@ -144,20 +144,19 @@ async function uploadToSFTP(csv, csvName, possibleError) {
 }
 
 /** Applies modifications to the passed report csv */
-async function modifyReport(reportCSV: string, reportId: string): Promise<string> {
+async function modifyReport(reportCSV: string, reportType: string): Promise<string> {
 
     let csv;
 
-    switch (reportId) {
+    switch (reportType) {
 
         case ReportEnums.MEMBERSHIP_REPORT: {
 
             let uniqueIdentifier = 'CardCustomerEmail';
-            let columnsToRemove = ['CardCustomerFirstName', 'CardCustomerLastName'];
             let dateField = 'MembershipExpirationDate';
 
             // Parse the csv into an array of objects
-            let csvArray = await rp.parser(reportCSV);
+            let csvArray = await rp.parser(reportCSV, reportType);
 
             // Remove guests
             csvArray = rp.removeGuests(csvArray);
@@ -167,9 +166,6 @@ async function modifyReport(reportCSV: string, reportId: string): Promise<string
 
             // Remove duplicates
             csvArray = rp.removeDuplicates(csvArray, uniqueIdentifier);
-
-            // Remove unneeded columns
-            csvArray = rp.removeColumns(csvArray, columnsToRemove);
 
             // Create csv string
             csv = await rp.createCSV(csvArray);
@@ -185,14 +181,8 @@ async function modifyReport(reportCSV: string, reportId: string): Promise<string
 
         case ReportEnums.TRANSACTION_REPORT: {
 
-            let columnsToRemove = ['ContactFirstName', 'ContactLastName', 'ZipCode', 'MembershipExternalId', 'MembershipPrimaryFirstName', 'MembershipPrimaryLastName', 'MembershipLevelName', 'MembershipOfferingName'];
-            let columnsSortOrder = [];
-
             // Parse the csv into an array of objects
-            let csvArray = await rp.parser(reportCSV);
-
-            // Remove unneeded columns
-            csvArray = rp.removeColumns(csvArray, columnsToRemove);
+            let csvArray = await rp.parser(reportCSV, reportType);
             
             csv = await rp.createCSV(csvArray);
 
@@ -205,7 +195,7 @@ async function modifyReport(reportCSV: string, reportId: string): Promise<string
             let uniqueIdentifier = 'Email';
 
             // Parse the csv into an array of objects
-            let csvArray = await rp.parser(reportCSV);
+            let csvArray = await rp.parser(reportCSV, reportType);
 
             // Sort based on transaction date
             csvArray = rp.sortByDateField(csvArray, dateField);
@@ -213,10 +203,7 @@ async function modifyReport(reportCSV: string, reportId: string): Promise<string
             // Remove duplicates
             csvArray = rp.removeDuplicates(csvArray, uniqueIdentifier)
 
-            // Create the persons array
-            let persons = rp.createPersonRecords(csvArray);
-
-            csv = await rp.createCSV(persons);
+            csv = await rp.createCSV(csvArray);
 
             break;
         }

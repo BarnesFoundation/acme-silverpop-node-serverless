@@ -1,14 +1,14 @@
 import * as parse from 'csv-parse';
 import * as stringify from 'csv-stringify';
 
-// import { Person } from '@interfaces/person.interface';
+import { ReportEnums } from '@enums/report.enums';
 import { Person } from '@classes/person.class';
 import { Transaction } from '@classes/transaction.class';
 import { Membership } from '@classes/membership.class';
 
 
 /** Parses a provided csv string into an array of objects */
-export function parser(csv): Promise<any[]> {
+export function parser(csv, recordType): Promise<any[]> {
     return new Promise((resolve, reject) => {
 
         // Setup output and the parser
@@ -19,10 +19,7 @@ export function parser(csv): Promise<any[]> {
         parser.on('readable', () => {
             let record;
             while (record = parser.read()) {
-
-
-
-                output.push(record);
+                output.push(objectFactory(record, recordType));
             }
         });
 
@@ -38,22 +35,22 @@ export function parser(csv): Promise<any[]> {
     });
 }
 
-function objectFactory(r, objectType) {
+function objectFactory(r, objectType): {} {
 
     switch (objectType) {
 
-        case 'Person':
+        case ReportEnums.CONTACT_REPORT:
             return new Person(r.Email, r.ContactFirstName, r.ContactLastName, r.ZipCode);
 
-        case 'Transaction':
-            return new Transaction(r.AccountName, r.AccountCategoryName, r.TransactionAmount, r.DiscountedTransactionAmount, r.DiscountTransactionValue, r.SaleChannel, r.OrderItemType,
-                r.ItemName, r.CouponCode, r.CouponName, r.EventName, r.EventStartTime, r.TicketType, r.AddOn, r.DiscountedUnitPrice, r.PaymentAmount, r.Email, r.EventTemplateCustomerField2,
-                r.TransactionId, r.OrderNumber, '', '', r.TransactionItemId, r.TranaactionDate);
+        case ReportEnums.TRANSACTION_REPORT:
+            return new Transaction(r.OrganizationName, r.OrganizationCategoryName, r.TransactionAmount, r.DiscountedTransactionAmount, r.DiscountTransactionValue, r.SaleChannel, r.OrderItemType,
+                r.ItemName, r.CouponCode, r.CouponName, r.EventName, r.EventStartTime, r.TicketType, r.AddOn, r.Quantity, r.DiscountedUnitPrice, r.PaymentAmount, r.Email, r.EventTemplateCustomerField2, r.TransactionId, r.OrderNumber, '', '', r.TransactionItemId, r.TransactionDate);
 
-        case 'Membership':
+        case ReportEnums.MEMBERSHIP_REPORT:
                 return new Membership(r.MembershipNumber, r.MembershipLevelName, r.MembershipOfferingName, r.MembershipSource, r.MembershipExternalMembershipId, r.MembershipJoinDate, r.MembershipStartDate, r.MembershipExpirationDate, r.MembershipDuration, r.MembershipStanding, r.MembershipIsGifted, r.RE_MembershipProgramName, r.RE_MembershipCategoryName, r.RE_MembershipFund, r.RE_MembershipCampaign, r.RE_MembershipAppeal, r.CardType, r.CardName, r.CardStartDate, r.CardExpirationDate, r.CardCustomerPrimaryCity, r.CardCustomerPrimaryState, r.CardCustomerPrimaryZip, r.CardCustomerEmail);
-        case 'Sale':
-                //return new Sale()
+                
+        case ReportEnums.SALES_REPORT:
+                return r;
     }
 }
 
