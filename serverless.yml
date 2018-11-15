@@ -10,11 +10,13 @@ provider:
   name: aws
   runtime: nodejs8.10
   profile: cjativa-acme-nightly-sync
+  
 
 functions:
   index:
     handler: handler.index
     timeout: 300
+    memorySize: 3008
     events:
 
       # Scheduled event for the Sales Report
