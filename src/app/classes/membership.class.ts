@@ -1,4 +1,6 @@
-class Membership {
+import { BaseReport } from '@classes/baseReport.class'
+
+class Membership extends BaseReport {
 
     MembershipNumber: string;
     MembershipLevelName: string;
@@ -29,14 +31,16 @@ class Membership {
         CardName: string, CardStartDate: string, CardExpirationDate: string, CardCustomerPrimaryCity: string, CardCustomerPrimaryState: string, CardCustomerPrimaryZip: string,
         CardCustomerEmail: string, ) {
 
+            super();
+
             this.MembershipNumber = MembershipNumber;
             this.MembershipLevelName = MembershipLevelName;
             this.MembershipOfferingName = MembershipOfferingName;
             this.MembershipSource = MembershipSource;
             this.MembershipExternalMembershipId = MembershipExternalMembershipId;
-            this.MembershipJoinDate = MembershipJoinDate;
-            this.MembershipStartDate = MembershipStartDate;
-            this.MembershipExpirationDate = MembershipExpirationDate;
+            this.MembershipJoinDate = this.formatDate(MembershipJoinDate);
+            this.MembershipStartDate = this.formatDate(MembershipStartDate);
+            this.MembershipExpirationDate = this.formatDate(MembershipExpirationDate);
             this.MembershipDuration = MembershipDuration;
             this.MembershipStanding = MembershipStanding;
             this.MembershipIsGifted = MembershipIsGifted;
@@ -47,8 +51,8 @@ class Membership {
             this.RE_MembershipAppeal = RE_MembershipAppeal; 
             this.CardType = CardType;
             this.CardName = CardName;
-            this.CardStartDate = CardStartDate;
-            this.CardExpirationDate = CardExpirationDate;
+            this.CardStartDate = this.formatDate(CardStartDate);
+            this.CardExpirationDate = this.formatDate(CardExpirationDate);
             this.CardCustomerPrimaryCity = CardCustomerPrimaryCity;
             this.CardCustomerPrimaryState = CardCustomerPrimaryState;
             this.CardCustomerPrimaryZip = CardCustomerPrimaryZip;

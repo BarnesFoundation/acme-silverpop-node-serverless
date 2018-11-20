@@ -9,17 +9,19 @@ import { Membership } from '@classes/membership.class';
 
 /** Parses a provided csv string into an array of objects */
 export function parser(csv, recordType): Promise<any[]> {
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
 
         // Setup output and the parser
+        let csvRecords = [];
         let output = [];
         let parser = parse({ columns: true });
 
         // Read in the stream for parsing
-        parser.on('readable', () => {
+        parser.on('readable', async () => {
             let record;
             while (record = parser.read()) {
-                output.push(objectFactory(record, recordType));
+                let object = objectFactory(record, recordType);
+                output.push(object);
             }
         });
 
@@ -27,7 +29,7 @@ export function parser(csv, recordType): Promise<any[]> {
         parser.on('error', (error) => { console.log(error.message); });
 
         // Once parsing has finished
-        parser.on('end', () => { resolve(output); });
+        parser.on('end', () => { console.log(csvRecords); resolve(output); });
 
         // Write the csv to the parser
         parser.write(csv);
@@ -35,6 +37,7 @@ export function parser(csv, recordType): Promise<any[]> {
     });
 }
 
+/** Creates object based of the type passed */
 function objectFactory(r, objectType): {} {
 
     switch (objectType) {
@@ -47,10 +50,10 @@ function objectFactory(r, objectType): {} {
                 r.ItemName, r.CouponCode, r.CouponName, r.EventName, r.EventStartTime, r.TicketType, r.AddOn, r.Quantity, r.DiscountedUnitPrice, r.PaymentAmount, r.Email, r.EventTemplateCustomerField2, r.TransactionId, r.OrderNumber, '', '', r.TransactionItemId, r.TransactionDate);
 
         case ReportEnums.MEMBERSHIP_REPORT:
-                return new Membership(r.MembershipNumber, r.MembershipLevelName, r.MembershipOfferingName, r.MembershipSource, r.MembershipExternalMembershipId, r.MembershipJoinDate, r.MembershipStartDate, r.MembershipExpirationDate, r.MembershipDuration, r.MembershipStanding, r.MembershipIsGifted, r.RE_MembershipProgramName, r.RE_MembershipCategoryName, r.RE_MembershipFund, r.RE_MembershipCampaign, r.RE_MembershipAppeal, r.CardType, r.CardName, r.CardStartDate, r.CardExpirationDate, r.CardCustomerPrimaryCity, r.CardCustomerPrimaryState, r.CardCustomerPrimaryZip, r.CardCustomerEmail);
-                
+            return new Membership(r.MembershipNumber, r.MembershipLevelName, r.MembershipOfferingName, r.MembershipSource, r.MembershipExternalMembershipId, r.MembershipJoinDate, r.MembershipStartDate, r.MembershipExpirationDate, r.MembershipDuration, r.MembershipStanding, r.MembershipIsGifted, r.RE_MembershipProgramName, r.RE_MembershipCategoryName, r.RE_MembershipFund, r.RE_MembershipCampaign, r.RE_MembershipAppeal, r.CardType, r.CardName, r.CardStartDate, r.CardExpirationDate, r.CardCustomerPrimaryCity, r.CardCustomerPrimaryState, r.CardCustomerPrimaryZip, r.CardCustomerEmail);
+
         case ReportEnums.SALES_REPORT:
-                return r;
+            return r;
     }
 }
 
@@ -116,6 +119,40 @@ export function createCSV(records: any[]): Promise<string> {
     });
 }
 
+/** For stringifying a single record */
+export function createCSV1(record): Promise<any> {
+    return new Promise((resolve, reject) => {
+
+        // Generate the headers for the csv
+        let headers = generateHeaders(record);
+
+        // Create output and stringifier
+        let csvString = [];
+        let stringifier = stringify({ columns: headers });
+
+        // Read each row into the output
+        stringifier.on('readable', () => {
+            let row;
+            while (row = stringifier.read()) { csvString.push(row); }
+        });
+
+        let row = [];
+
+        // Build the row by iterating the object properties and adding them
+        for (let j = 0; j < headers.length; j++) { row.push(record[headers[j].key]); }
+
+        stringifier.write(row);
+
+        stringifier.end();
+
+        // Catch any errors that occur in reading the input
+        stringifier.on('error', (error) => { reject(error); });
+
+        // Resolve the promise once the stringifier is done
+        stringifier.on('finish', () => { resolve(csvString.join('')); });
+    });
+}
+
 /** Generates a key-value array containing the properties of an object */
 function generateHeaders(record: {}): { key: string }[] {
 
@@ -160,36 +197,4 @@ export function removeDuplicates(records: any[], uniqueField): any[] {
     encountered = [];
 
     return filteredSet;
-}
-
-/** Removes the designated columns from each object in the array provided */
-export function removeColumns(records: {}[], columns: any[]): any[] {
-
-    // Iterate through the records
-    for (let i = 0; i < records.length; i++) {
-
-        // Delete the columns from the record
-        for (let j = 0; j < columns.length; j++) { delete records[i][columns[j]]; };
-    }
-    return records;
-}
-
-export function createPersonRecords(records: any[]): Person[] {
-
-    let persons: Person[] = [];
-
-    for (let i = 0; i < records.length; i++) {
-
-        let transaction: any = records[i];
-
-        let person: Person = {
-            Email: transaction.Email,
-            ContactFirstName: transaction.ContactFirstName,
-            ContactLastName: transaction.ContactLastName,
-            ZipCode: transaction.ZipCode
-        };
-
-        persons.push(person);
-    }
-    return persons;
 }

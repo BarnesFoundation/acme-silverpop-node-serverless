@@ -1,4 +1,6 @@
-class Transaction {
+import { BaseReport } from '@classes/baseReport.class'
+
+class Transaction extends BaseReport {
 
     AccountName: string;
     AccountCategoryName: string;
@@ -31,6 +33,8 @@ class Transaction {
         DiscountedUnitPrice: string, PaymentAmount: string, Email: string, EventTemplateCustomField2: string, TransactionId: string, OrderNumber: string, CheckInStatus: string, 
         ConversionStatus: string, TransactionItemId: string, TransactionDate: string) {
 
+            super();
+
             this.AccountName = AccountName;
             this.AccountCategoryName = AccountCategoryName;
             this.TransactionAmount = TransactionAmount;
@@ -42,7 +46,7 @@ class Transaction {
             this.CouponCode = CouponCode;
             this.CouponName = CouponName;
             this.EventName = EventName;
-            this.EventStartTime = EventStartTime;
+            this.EventStartTime = this.formatDate(EventStartTime);
             this.TicketType = TicketType;
             this.AddOn = AddOn;
             this.Quantity = Quantity;
@@ -55,7 +59,7 @@ class Transaction {
             this.CheckInStatus = CheckInStatus;
             this.ConversionStatus = ConversionStatus;
             this.TransactionItemId = TransactionItemId;
-            this.TransactionDate = TransactionDate;
+            this.TransactionDate = this.formatDate(TransactionDate);
         }
 }
 
