@@ -27,4 +27,4 @@ This project is configured for deployment to AWS Lambda. Follow the below steps 
  2. Update `provider.profile` in `serverless.yml` with the name of the profile you chose above
  3. Run `serverless deploy -v` to deploy the lambda function
  
-
+The deployed lambda function can be found here [AcmeNightlySync](https://console.aws.amazon.com/lambda/home?region=us-east-1#/functions/AcmeNightlySync-dev-index)
