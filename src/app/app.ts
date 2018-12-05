@@ -1,5 +1,6 @@
 import * as request from 'request-promise-native';
 import * as ssh2SFTPClient from 'ssh2-sftp-client';
+import * as querystring from 'querystring';
 
 import { Callback } from 'aws-lambda';
 
@@ -8,8 +9,10 @@ import { Convert } from '@utils/time';
 import { Input } from '@interfaces/input.interface';
 import { ReportEnums } from '@enums/report.enums';
 import { AcmeReportList, AcmeReport } from '@interfaces/acmeReport.interface';
+import { AcmeReportPayload } from '@interfaces/acmeReportPayload.interface';
 
 import * as rp from '@classes/reportProcessor';
+import * as pp from '@classes/payloadProcessor';
 
 async function main(input: Input, cb: Callback) {
 
@@ -23,11 +26,13 @@ async function main(input: Input, cb: Callback) {
     // Determine the file name based on the environment 
     let fileName = (Config.environment === "PRODUCTION") ? input.report + '.csv' : input.report + '-test.csv';
 
-    // Retrieve the CSV for this report from ACME
-    let reportCSV = await getReportFromEndpoint(report.type, constructReportUrl(report.path));
-
+    // Retrieve the data for this report from ACME
+    let reportData = await getReportFromEndpoint(report.type, constructReportUrl(report.path));
+    
+    let reportRecords = pp.processToRecords(reportData.resultFieldList, report.type) ;
+    
     // Apply report modifications
-    reportCSV = await modifyReport(reportCSV, reportId);
+    let reportCSV = await modifyReport(reportRecords, reportId);
 
     // Upload the reports to the SFTP site
     let error;
@@ -73,13 +78,13 @@ function setReport(reportId): AcmeReport {
     return report;
 }
 
-/** Iterates fetching through the list of available report types */
+/** Constructs the complete report url to execute in the ACME API */
 function constructReportUrl(path) {
     return Config.apiRootUrl + Config.apiReportEndpoint + path;
 }
 
 /** Fetches report from the specified endpoint */
-function getReportFromEndpoint(reportType: ReportEnums, requestUrl: string): request.RequestPromise<string> {
+function getReportFromEndpoint(reportType: ReportEnums, requestUrl: string): request.RequestPromise<AcmeReportPayload> {
 
     // Configure options for the http request
     const options = {
@@ -143,8 +148,8 @@ async function uploadToSFTP(csv, csvName, possibleError) {
     }
 }
 
-/** Applies modifications to the passed report csv */
-async function modifyReport(reportCSV: string, reportType: string): Promise<string> {
+/** Applies modifications to the passed records and returns csv string */
+async function modifyReport(reportRecords: any, reportType: string): Promise<string> {
 
     let csv;
 
@@ -155,36 +160,30 @@ async function modifyReport(reportCSV: string, reportType: string): Promise<stri
             let uniqueIdentifier = 'CardCustomerEmail';
             let dateField = 'MembershipExpirationDate';
 
-            // Parse the csv into an array of objects
-            let csvArray = await rp.parser(reportCSV, reportType);
-
             // Remove guests
-            csvArray = rp.removeGuests(csvArray);
+            let records = rp.removeGuests(reportRecords);
 
             // Sort by card expiration date
-            csvArray = rp.sortByDateField(csvArray, dateField);
+            records = rp.sortByDateField(records, dateField);
 
             // Remove duplicates
-            csvArray = rp.removeDuplicates(csvArray, uniqueIdentifier);
+            records = rp.removeDuplicates(records, uniqueIdentifier);
 
             // Create csv string
-            csv = await rp.createCSV(csvArray);
+            csv = await rp.createCSV(records);
 
             break;
         }
 
         case ReportEnums.SALES_REPORT: {
-            csv = reportCSV;
+            csv = reportRecords;
 
             break;
         }
 
         case ReportEnums.TRANSACTION_REPORT: {
-
-            // Parse the csv into an array of objects
-            let csvArray = await rp.parser(reportCSV, reportType);
             
-            csv = await rp.createCSV(csvArray);
+            csv = await rp.createCSV(reportRecords);
 
             break;
         }
@@ -194,16 +193,13 @@ async function modifyReport(reportCSV: string, reportType: string): Promise<stri
             let dateField = 'TransactionDate';
             let uniqueIdentifier = 'Email';
 
-            // Parse the csv into an array of objects
-            let csvArray = await rp.parser(reportCSV, reportType);
-
             // Sort based on transaction date
-            csvArray = rp.sortByDateField(csvArray, dateField);
+            let records = rp.sortByDateField(reportRecords, dateField);
 
             // Remove duplicates
-            csvArray = rp.removeDuplicates(csvArray, uniqueIdentifier)
+            records = rp.removeDuplicates(records, uniqueIdentifier)
 
-            csv = await rp.createCSV(csvArray);
+            csv = await rp.createCSV(records);
 
             break;
         }
