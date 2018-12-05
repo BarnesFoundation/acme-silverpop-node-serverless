@@ -19,16 +19,6 @@ functions:
     memorySize: 3008
     events:
 
-      # Scheduled event for the Sales Report
-      - schedule:
-          name: AcmeNightlySync-ScheduledEvent-SalesReportExecution
-          description: 'An event scheduled to run at midnight of each week day at 4 AM UTC | 12 AM UTC-4'
-          rate: cron(0 5 * * ? *)
-          enabled: true
-          input:
-            report: Sales
-            reportId: SalesReport
-
       # Scheduled event for the Transactions Report
       - schedule:
           name: AcmeNightlySync-ScheduledEvent-TransactionsReportExecution

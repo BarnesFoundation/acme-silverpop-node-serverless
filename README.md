@@ -8,7 +8,7 @@ The logic of the lambda function lives within the `src` directory, with the `han
 
  1. Ensure  `npm` and `serverless cli` are installed on the workstation 
  2. Download and extract the repository into your local development workspace
- 3. Run `npm install`to install application dependencies (this will install both production and development dependencies)
+ 3. Run `npm install` to install application dependencies (this will install both production and development dependencies)
 
 
 ## Development
