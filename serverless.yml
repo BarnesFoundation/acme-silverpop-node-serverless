@@ -10,12 +10,14 @@ provider:
   name: aws
   runtime: nodejs8.10
   profile: cjativa-acme-nightly-sync
+  timeout: 900
+  memorySize: 3008
   
 
 functions:
   index:
     handler: handler.index
-    timeout: 300
+    timeout: 900
     memorySize: 3008
     events:
 
