@@ -93,7 +93,9 @@ function getReportFromEndpoint(reportType: ReportEnums, requestUrl: string): req
             'Accept': 'application/json',
             'x-acme-api-key': Config.apiKey,
             'x-b2c-tenant-id': Config.apiTenantId
-        }, json: true
+		}, 
+		json: true,
+		timeout: 900000
     }
 
     // Await the response for the csv data from the request
