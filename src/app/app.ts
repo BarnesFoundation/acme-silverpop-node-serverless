@@ -22,17 +22,14 @@ async function main(input: Input, cb: Callback) {
 
     const startTime = Date.now();
 
-    const reportId = input.reportId;
+    const  {reportId } = input;
 
-    // Set the report to be used for this execution
+    // Set the report to be used for this execution and file name
     const report = setReport(reportId)
-
-    // Determine the file name based on the environment 
     const fileName = (Config.environment === "PRODUCTION") ? input.report + '.csv' : input.report + '-test.csv';
 
     // Retrieve the data for this report from ACME
     const reportData = await getReportFromEndpoint(report.type, constructReportUrl(report.path));
-    
     const reportRecords = pp.processToRecords(reportData.resultFieldList, report.type) ;
     
     // Apply report modifications
@@ -40,12 +37,10 @@ async function main(input: Input, cb: Callback) {
 
     // Upload the reports to the SFTP site
     let error;
-    let sftpUploadSuccess = await uploadToSFTP(reportCSV, fileName, error);
+    const sftpUploadSuccess = await uploadToSFTP(reportCSV, fileName, error);
 
-    let endTime = Date.now();
-    let elapsedTime = Convert(endTime - startTime);
-
-    let result = (sftpUploadSuccess) ? 'Uploaded ' + fileName + ' to the SFTP site with elapsed time ' + elapsedTime : 'Failed to upload ' + fileName + ' to the SFTP site';
+    const elapsedTime = Convert(Date.now() - startTime);
+    const result = (sftpUploadSuccess) ? 'Uploaded ' + fileName + ' to the SFTP site with elapsed time ' + elapsedTime : 'Failed to upload ' + fileName + ' to the SFTP site';
 
     // Return success
     if (sftpUploadSuccess) { cb(null, result); }
