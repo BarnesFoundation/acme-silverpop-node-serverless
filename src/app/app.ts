@@ -187,7 +187,7 @@ async function modifyReport(reportRecords: Person[] | Membership[] | Transaction
             records = rp.sortByDateField(reportRecords, 'TransactionDate');
 			records = rp.removeDuplicates(records, 'Email');
 
-			 csv = await rp.createCSV(records, [ 'Email, ContactFirstName', 'ContactLastName', 'ZipCode' ]);
+			 csv = await rp.createCSV(records, [ 'Email', 'ContactFirstName', 'ContactLastName', 'ZipCode' ]);
 			 break;
 		}
 	}
