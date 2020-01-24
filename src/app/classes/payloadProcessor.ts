@@ -31,7 +31,7 @@ export function processToRecords(resultsList: ResultItem[], reportType): Person[
 }
 
 /** Creates object based off the type passed */
-function objectFactory(r, objectType): Person | Transaction | Membership {
+function objectFactory(r, objectType: string): Person | Transaction | Membership {
 
     switch (objectType) {
 
@@ -43,7 +43,7 @@ function objectFactory(r, objectType): Person | Transaction | Membership {
                 r.ItemName, r.CouponCode, r.CouponName, r.EventName, r.EventStartTime, r.TicketType, r.AddOn, r.Quantity, r.DiscountedUnitPrice, r.PaymentAmount, r.Email, r.EventTemplateCustomField2, r.TransactionId, r.OrderNumber, '', '', r.TransactionItemId, r.TransactionDate);
 
         case ReportEnums.MEMBERSHIP_REPORT:
-            return new Membership(r.MembershipNumber, r.MembershipLevelName, r.MembershipOfferingName, r.MembershipSource, r.MembershipExternalMembershipId, r.MembershipJoinDate, r.MembershipStartDate, r.MembershipExpirationDate, r.MembershipDuration, r.MembershipStanding, r.MembershipIsGifted, r.RE_MembershipProgramName, r.RE_MembershipCategoryName, r.RE_MembershipFund, r.RE_MembershipCampaign, r.RE_MembershipAppeal, r.CardType, r.CardName, r.CardStartDate, r.CardExpirationDate, r.CardCustomerPrimaryCity, r.CardCustomerPrimaryState, r.CardCustomerPrimaryZip, r.CardCustomerEmail);
+            return new Membership(r.MembershipNumber, r.MembershipLevelName, r.MembershipOfferingName, r.MembershipSource, r.MembershipExternalMembershipId, r.MembershipJoinDate, r.MembershipStartDate, r.MembershipExpirationDate, r.MembershipDuration, r.MembershipStanding, r.MembershipIsGifted, r.RE_MembershipProgramName, r.RE_MembershipCategoryName, r.RE_MembershipFund, r.RE_MembershipCampaign, r.RE_MembershipAppeal, r.CardType, r.CardName, r.CardStartDate, r.CardExpirationDate, r.CardCustomerPrimaryCity, r.CardCustomerPrimaryState, r.CardCustomerPrimaryZip, r.CardCustomerEmail, r.CardCustomerFirstName, r.CardCustomerLastName);
 
         case ReportEnums.SALES_REPORT:
             return r;
