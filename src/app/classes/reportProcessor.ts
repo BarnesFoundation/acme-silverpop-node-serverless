@@ -43,7 +43,7 @@ function objectFactory(r, objectType): {} {
     switch (objectType) {
 
         case ReportEnums.CONTACT_REPORT:
-            return new Person(r.Email, r.ContactFirstName, r.ContactLastName, r.ZipCode);
+            return new Person(r.Email, r.ContactFirstName, r.ContactLastName, r.ZipCode, r.TransactionDate);
 
         case ReportEnums.TRANSACTION_REPORT:
             return new Transaction(r.OrganizationName, r.OrganizationCategoryName, r.TransactionAmount, r.DiscountedTransactionAmount, r.DiscountTransactionValue, r.SaleChannel, r.OrderItemType,
@@ -58,15 +58,15 @@ function objectFactory(r, objectType): {} {
 }
 
 /** Removes guest rows from the provided csv array */
-export function removeGuests(csv: any[]) {
-    return csv.filter((currentElement, index, array) => {
+export function removeGuests(memberships: Membership[]) {
+    return memberships.filter((currentElement) => {
         return !currentElement.CardName.toLowerCase().includes('Guest of'.toLowerCase()) // Only accept rows where CardName doesn't include 'Guest of'
     });
 }
 
 /** Sorts the provided array by the provided date-type field, in descending order */
-export function sortByDateField(csv: any[], dateField) {
-    return csv.sort((a, b) => {
+export function sortByDateField(list: any[], dateField: string) {
+    return list.sort((a, b) => {
 
         // Get the date of each row
         let aDate = new Date(a[dateField]);
@@ -82,15 +82,15 @@ export function sortByDateField(csv: any[], dateField) {
 }
 
 /** Transform a csv-like array and returns a csv formatted string */
-export function createCSV(records: any[]): Promise<string> {
+export function createCSV(records: any[], headers?: string[]): Promise<string> {
     return new Promise((resolve, reject) => {
 
-        // Generate the headers for the csv
-        let headers = generateHeaders(records[0]);
+        // Generate the column headers for the csv if they weren't provided
+        const columns = (headers) ? headers : generateHeaders(records[0]);
 
         // Create output and stringifier
-        let csvString = [];
-        let stringifier = stringify({ columns: headers, header: true });
+        const csvString = [];
+        const stringifier = stringify({ columns: columns, header: true });
 
         // Read each row into the output
         stringifier.on('readable', () => {
@@ -104,7 +104,7 @@ export function createCSV(records: any[]): Promise<string> {
             let row = [];
 
             // Build the row by iterating the object properties and adding them
-            for (let j = 0; j < headers.length; j++) { row.push(records[i][headers[j].key]); }
+            for (let j = 0; j < columns.length; j++) { row.push(records[i][columns[j]]); }
 
             stringifier.write(row);
         }
@@ -119,49 +119,14 @@ export function createCSV(records: any[]): Promise<string> {
     });
 }
 
-/** For stringifying a single record */
-export function createCSV1(record): Promise<any> {
-    return new Promise((resolve, reject) => {
-
-        // Generate the headers for the csv
-        let headers = generateHeaders(record);
-
-        // Create output and stringifier
-        let csvString = [];
-        let stringifier = stringify({ columns: headers });
-
-        // Read each row into the output
-        stringifier.on('readable', () => {
-            let row;
-            while (row = stringifier.read()) { csvString.push(row); }
-        });
-
-        let row = [];
-
-        // Build the row by iterating the object properties and adding them
-        for (let j = 0; j < headers.length; j++) { row.push(record[headers[j].key]); }
-
-        stringifier.write(row);
-
-        stringifier.end();
-
-        // Catch any errors that occur in reading the input
-        stringifier.on('error', (error) => { reject(error); });
-
-        // Resolve the promise once the stringifier is done
-        stringifier.on('finish', () => { resolve(csvString.join('')); });
-    });
-}
-
 /** Generates a key-value array containing the properties of an object */
-function generateHeaders(record: {}): { key: string }[] {
+function generateHeaders(record: {}): string[] {
 
-    let headers = [];
-    let properties = Object.getOwnPropertyNames(record)
+    const headers = [];
+    const properties = Object.getOwnPropertyNames(record)
 
     for (let i = 0; i < properties.length; i++) {
-        let header = { key: properties[i] }
-        headers.push(header);
+        headers.push(properties[i]);
     }
     return headers;
 }

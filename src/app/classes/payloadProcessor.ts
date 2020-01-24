@@ -5,7 +5,7 @@ import { Membership } from '@classes/membership.class';
 import { ResultItem } from '@interfaces/acmeReportPayload.interface';
 
 /** Processes the provided results array into typed objects */
-export function processToRecords(resultsList: ResultItem[], reportType): any[] {
+export function processToRecords(resultsList: ResultItem[], reportType): Person[] | Transaction[] | Membership[] {
 
     let records = [];
     let fields = [];
@@ -31,12 +31,12 @@ export function processToRecords(resultsList: ResultItem[], reportType): any[] {
 }
 
 /** Creates object based off the type passed */
-function objectFactory(r, objectType): {} {
+function objectFactory(r, objectType): Person | Transaction | Membership {
 
     switch (objectType) {
 
         case ReportEnums.CONTACT_REPORT:
-            return new Person(r.Email, r.ContactFirstName, r.ContactLastName, r.ZipCode);
+            return new Person(r.Email, r.ContactFirstName, r.ContactLastName, r.ZipCode, r.TransactionDate);
 
         case ReportEnums.TRANSACTION_REPORT:
             return new Transaction(r.OrganizationName, r.OrganizationCategoryName, r.TransactionAmount, r.DiscountedTransactionAmount, r.DiscountTransactionValue, r.SaleChannel, r.OrderItemType,

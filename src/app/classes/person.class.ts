@@ -3,14 +3,16 @@ class Person {
     Email: string;
     ContactFirstName: string;
     ContactLastName: string;
-    ZipCode: string;
+	ZipCode: string;
+	TransactionDate: string;
 
-    constructor(Email: string, ContactFirstName: string, ContactLastName: string, ZipCode: string) {
+    constructor(Email: string, ContactFirstName: string, ContactLastName: string, ZipCode: string, TransactionDate: string) {
 
         this.Email = Email;
         this.ContactFirstName = ContactFirstName;
         this.ContactLastName = ContactLastName;
-        this.ZipCode = ZipCode;
+		this.ZipCode = ZipCode;
+		this.TransactionDate = TransactionDate;
     }
 
     //These below are commented out in the original sync code
