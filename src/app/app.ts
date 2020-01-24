@@ -13,26 +13,30 @@ import { AcmeReportPayload } from '@interfaces/acmeReportPayload.interface';
 
 import * as rp from '@classes/reportProcessor';
 import * as pp from '@classes/payloadProcessor';
+import { Membership } from './classes/membership.class';
+import { Transaction } from './classes/transaction.class';
+import { Person } from '@classes/person.class';
+
 
 async function main(input: Input, cb: Callback) {
 
-    let startTime = Date.now();
+    const startTime = Date.now();
 
-    let reportId = input.reportId;
+    const reportId = input.reportId;
 
     // Set the report to be used for this execution
-    let report = setReport(reportId)
+    const report = setReport(reportId)
 
     // Determine the file name based on the environment 
-    let fileName = (Config.environment === "PRODUCTION") ? input.report + '.csv' : input.report + '-test.csv';
+    const fileName = (Config.environment === "PRODUCTION") ? input.report + '.csv' : input.report + '-test.csv';
 
     // Retrieve the data for this report from ACME
-    let reportData = await getReportFromEndpoint(report.type, constructReportUrl(report.path));
+    const reportData = await getReportFromEndpoint(report.type, constructReportUrl(report.path));
     
-    let reportRecords = pp.processToRecords(reportData.resultFieldList, report.type) ;
+    const reportRecords = pp.processToRecords(reportData.resultFieldList, report.type) ;
     
     // Apply report modifications
-    let reportCSV = await modifyReport(reportRecords, reportId);
+    const reportCSV = await modifyReport(reportRecords, reportId);
 
     // Upload the reports to the SFTP site
     let error;
@@ -151,43 +155,49 @@ async function uploadToSFTP(csv, csvName, possibleError) {
 }
 
 /** Applies modifications to the passed records and returns csv string */
-async function modifyReport(reportRecords: any, reportType: string): Promise<string> {
+async function modifyReport(reportRecords: Person[] | Membership[] | Transaction[], reportType: string): Promise<string> {
 
-	let csv;
-	let records;
+	let csv: string;
 
     switch (reportType) {
 
 		// Membership report has guests removed, sorted, and deduped
         case ReportEnums.MEMBERSHIP_REPORT: {
 
+			let records = reportRecords as Membership[];
+
             // Remove guests, sort by card expiration date, and remove duplicates
-            records = rp.removeGuests(reportRecords);
+            records = rp.removeGuests(records);
             records = rp.sortByDateField(records, 'MembershipExpirationDate');
 			records = rp.removeDuplicates(records, 'CardCustomerEmail');
-            break;
+
+			csv = await rp.createCSV(records);
+			break;
         }
 
 		// Transaction report gets no modifications
         case ReportEnums.TRANSACTION_REPORT: {
-            
-            records = reportRecords;
-            break;
-        }
+			
+			let records = reportRecords as Transaction[];
+			csv = await rp.createCSV(records);
+			break;
+		}
 
 		 // Contact report gets sorted and deduped
         case ReportEnums.CONTACT_REPORT: {
 
+			let records = reportRecords as Person[];
+
             // Sort based on transaction date, remove duplicates, 
             records = rp.sortByDateField(reportRecords, 'TransactionDate');
-            records = rp.removeDuplicates(records, 'Email');
-            break;
-        }
+			records = rp.removeDuplicates(records, 'Email');
+
+			 csv = await rp.createCSV(records, [ 'Email, ContactFirstName', 'ContactLastName', 'ZipCode' ]);
+			 break;
+		}
 	}
-	
-	// CSV-ify the records and return the csv
-	csv = await rp.createCSV(records);
-    return csv;
+
+	return csv;
 }
        
 export { main as Main }; 
