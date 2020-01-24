@@ -25,11 +25,13 @@ class Membership extends BaseReport {
     CardCustomerPrimaryCity: string;
     CardCustomerPrimaryState: string;
     CardCustomerPrimaryZip: string;
-    CardCustomerEmail: string;
+	CardCustomerEmail: string;
+	CardCustomerFirstName?: string;
+	CardCustomerLastName?: string;
 
     constructor(MembershipNumber: string, MembershipLevelName: string, MembershipOfferingName: string, MembershipSource: string, MembershipExternalMembershipId: string, MembershipJoinDate: string, MembershipStartDate: string, MembershipExpirationDate: string, MembershipDuration: string, MembershipStanding: string, MembershipIsGifted: string, RE_MembershipProgramName: string, RE_MembershipCategoryName: string, RE_MembershipFund: string, RE_MembershipCampaign: string, RE_MembershipAppeal: string, CardType: string,
         CardName: string, CardStartDate: string, CardExpirationDate: string, CardCustomerPrimaryCity: string, CardCustomerPrimaryState: string, CardCustomerPrimaryZip: string,
-        CardCustomerEmail: string, ) {
+        CardCustomerEmail: string, CardCustomerFirstName?: string, CardCustomerLastName?: string) {
 
             super();
 
@@ -56,7 +58,9 @@ class Membership extends BaseReport {
             this.CardCustomerPrimaryCity = CardCustomerPrimaryCity;
             this.CardCustomerPrimaryState = CardCustomerPrimaryState;
             this.CardCustomerPrimaryZip = CardCustomerPrimaryZip;
-            this.CardCustomerEmail = CardCustomerEmail;
+			this.CardCustomerEmail = CardCustomerEmail;
+			this.CardCustomerFirstName = CardCustomerFirstName;
+			this.CardCustomerLastName = CardCustomerLastName;
     }
 
 }
