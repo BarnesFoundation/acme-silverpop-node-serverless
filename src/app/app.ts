@@ -153,59 +153,40 @@ async function uploadToSFTP(csv, csvName, possibleError) {
 /** Applies modifications to the passed records and returns csv string */
 async function modifyReport(reportRecords: any, reportType: string): Promise<string> {
 
-    let csv;
+	let csv;
+	let records;
 
     switch (reportType) {
 
+		// Membership report has guests removed, sorted, and deduped
         case ReportEnums.MEMBERSHIP_REPORT: {
 
-            let uniqueIdentifier = 'CardCustomerEmail';
-            let dateField = 'MembershipExpirationDate';
-
-            // Remove guests
-            let records = rp.removeGuests(reportRecords);
-
-            // Sort by card expiration date
-            records = rp.sortByDateField(records, dateField);
-
-            // Remove duplicates
-            records = rp.removeDuplicates(records, uniqueIdentifier);
-
-            // Create csv string
-            csv = await rp.createCSV(records);
-
+            // Remove guests, sort by card expiration date, and remove duplicates
+            records = rp.removeGuests(reportRecords);
+            records = rp.sortByDateField(records, 'MembershipExpirationDate');
+			records = rp.removeDuplicates(records, 'CardCustomerEmail');
             break;
         }
 
-        case ReportEnums.SALES_REPORT: {
-            csv = reportRecords;
-
-            break;
-        }
-
+		// Transaction report gets no modifications
         case ReportEnums.TRANSACTION_REPORT: {
             
-            csv = await rp.createCSV(reportRecords);
-
+            records = reportRecords;
             break;
         }
 
+		 // Contact report gets sorted and deduped
         case ReportEnums.CONTACT_REPORT: {
 
-            let dateField = 'TransactionDate';
-            let uniqueIdentifier = 'Email';
-
-            // Sort based on transaction date
-            let records = rp.sortByDateField(reportRecords, dateField);
-
-            // Remove duplicates
-            records = rp.removeDuplicates(records, uniqueIdentifier)
-
-            csv = await rp.createCSV(records);
-
+            // Sort based on transaction date, remove duplicates, 
+            records = rp.sortByDateField(reportRecords, 'TransactionDate');
+            records = rp.removeDuplicates(records, 'Email');
             break;
         }
-    }
+	}
+	
+	// CSV-ify the records and return the csv
+	csv = await rp.createCSV(records);
     return csv;
 }
        
