@@ -155,7 +155,7 @@ async function modifyReportRecords(reportRecords: Person[] | Membership[] | Tran
 			records = rp.removeDuplicates(records, 'CardCustomerEmail');
 
 			// Create CSV with these headers only
-			csv = await rp.createCSV(records, [ 'MembershipNumber', 'MembershipLevelName', 'MembershipOfferingName', 'MembershipSource', 'MembershipExternalMembershipId', 'MembershipJoinDate', 'MembershipStartDate', 'MembershipExpirationDate', 'MembershipDuration', 'MembershipStanding', 'MembershipIsGifted', 'RE_MembershipProgramName', 'RE_MembershipCategoryName', 'RE_MembershipFund', 'RE_MembershipCampaign', 'RE_MembershipAppeal', 'CardType', 'CardName', 'CardStartDate', 'CardExpirationDate', 'CardCustomerPrimaryCity', 'CardCustomerPrimaryState', 'CardCustomerPrimaryZip', 'CardCustomerEmail' ]);
+			csv = await rp.createCSV(records, ['MembershipNumber', 'MembershipLevelName', 'MembershipOfferingName', 'MembershipSource', 'MembershipExternalMembershipId', 'MembershipJoinDate', 'MembershipStartDate', 'MembershipExpirationDate', 'MembershipDuration', 'MembershipStanding', 'MembershipIsGifted', 'RE_MembershipProgramName', 'RE_MembershipCategoryName', 'RE_MembershipFund', 'RE_MembershipCampaign', 'RE_MembershipAppeal', 'CardType', 'CardName', 'CardStartDate', 'CardExpirationDate', 'CardCustomerPrimaryCity', 'CardCustomerPrimaryState', 'CardCustomerPrimaryZip', 'CardCustomerEmail']);
 			break;
 		}
 
@@ -193,7 +193,7 @@ async function execute(report: AcmeReport): Promise<Membership[] | Transaction[]
 	if (report.type === ReportEnums.CONTACT_REPORT) {
 
 		// Retrieve the contact data and membership data simultaneously
-		const [ contactData, membershipData ] = await Promise.all([getReportFromEndpoint(report.type, constructReportUrl(report.path)), getReportFromEndpoint(AcmeReportList.membershipReport.type, constructReportUrl(AcmeReportList.membershipReport.path))]);
+		const [contactData, membershipData] = await Promise.all([getReportFromEndpoint(report.type, constructReportUrl(report.path)), getReportFromEndpoint(AcmeReportList.membershipReport.type, constructReportUrl(AcmeReportList.membershipReport.path))]);
 
 		// Convert both to lists of person objects
 		const contactRecords = pp.processToRecords(contactData.resultFieldList, report.type) as Person[];
@@ -203,12 +203,14 @@ async function execute(report: AcmeReport): Promise<Membership[] | Transaction[]
 		});
 
 		// Merge the two sets into report records
-		records = [ ...contactRecords, ... membershipRecords ] ;
-	} 
+		records = [...contactRecords, ...membershipRecords];
+	}
 
-	// Retrieve the data for this report from ACME
-	const reportData = await getReportFromEndpoint(report.type, constructReportUrl(report.path));
-	records = pp.processToRecords(reportData.resultFieldList, report.type);
+	else {
+		// Retrieve the data for this report from ACME
+		const reportData = await getReportFromEndpoint(report.type, constructReportUrl(report.path));
+		records = pp.processToRecords(reportData.resultFieldList, report.type);
+	}
 
 	return records;
 }
