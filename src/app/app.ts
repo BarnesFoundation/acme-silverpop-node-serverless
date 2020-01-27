@@ -29,7 +29,7 @@ async function main(input: Input, cb: Callback) {
 
 	// Retrieve the report records and pply modifications to them
 	const records = await execute(requestedReport);
-	const reportCSV = await modifyReportRecords(records, reportId);
+	const reportCSV = await modifyReportRecords(records, requestedReport.type);
 
 	// Upload the reports to the SFTP site
 	let error;
