@@ -167,13 +167,12 @@ async function modifyReportRecords(reportRecords: Person[] | Membership[] | Tran
 			break;
 		}
 
-		// Contact report gets sorted and deduped
+		// Contact report
 		case ReportEnums.CONTACT_REPORT: {
 
 			let records = reportRecords as Person[];
 
-			// Sort based on transaction date, remove duplicates, 
-			records = rp.sortByDateField(reportRecords, 'TransactionDate');
+			// Remove duplicates -- because membership records are listed first, they'll always be the latest unique record for a person. And if no membership record exists for a person's transaction, their latest transaction details would be used instead
 			records = rp.removeDuplicates(records, 'Email');
 
 			// Create CSV with these headers only
@@ -185,25 +184,29 @@ async function modifyReportRecords(reportRecords: Person[] | Membership[] | Tran
 	return csv;
 }
 
-/** Handles most of the work for processing the requested report */
+/** Handles most of the work for processing the requested report. Returns a list of records of Transaction, Membership, or Person type */
 async function execute(report: AcmeReport): Promise<Membership[] | Transaction[] | Person[]> {
 
 	let records;
 
 	if (report.type === ReportEnums.CONTACT_REPORT) {
 
-		// Retrieve the contact data and membership data simultaneously
-		const [contactData, membershipData] = await Promise.all([getReportFromEndpoint(report.type, constructReportUrl(report.path)), getReportFromEndpoint(AcmeReportList.membershipReport.type, constructReportUrl(AcmeReportList.membershipReport.path))]);
+		// Retrieve the transaction data and membership data simultaneously
+		const [transactionData, membershipData] = await Promise.all([getReportFromEndpoint(report.type, constructReportUrl(report.path)), getReportFromEndpoint(AcmeReportList.membershipReport.type, constructReportUrl(AcmeReportList.membershipReport.path))]);
 
 		// Convert both to lists of person objects
-		const contactRecords = pp.processToRecords(contactData.resultFieldList, report.type) as Person[];
-		const membershipRecords = (pp.processToRecords(membershipData.resultFieldList, AcmeReportList.membershipReport.type) as Membership[]).map((membership) => {
+		const personRecordsFromTransactions = pp.processToRecords(transactionData.resultFieldList, report.type) as Person[];
+		const personRecordsFromMemberships = (pp.processToRecords(membershipData.resultFieldList, AcmeReportList.membershipReport.type) as Membership[]).map((membership) => {
 			const { CardCustomerEmail, CardCustomerFirstName, CardCustomerLastName, CardCustomerPrimaryZip, CardStartDate } = membership;
 			return new Person(CardCustomerEmail, CardCustomerFirstName, CardCustomerLastName, CardCustomerPrimaryZip, CardStartDate);
 		});
 
-		// Merge the two sets into report records
-		records = [...contactRecords, ...membershipRecords];
+		// We want the most recent membership record to use as the final contact record, or if no membership record exists for that person, we'd use the latest transaction record
+		// So sort both record sets by transaction date descending
+		const [ sortedContactRecordsFromTransactions, sortedContactRecordsFromMemberships ] = await Promise.all([ rp.sortByDateField(personRecordsFromTransactions, 'TransactionDate'), rp.sortByDateField(personRecordsFromMemberships, 'TransactionDate')]);
+
+		// Merge the two lists into a single records lst -- with memberships being first. This way a membership record would supercede even a later transaction record
+		records = [ ...sortedContactRecordsFromMemberships, ...sortedContactRecordsFromTransactions ];
 	}
 
 	else {
