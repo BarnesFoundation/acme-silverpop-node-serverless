@@ -79,7 +79,7 @@ function generateHeaders(record: {}): string[] {
 }
 
 /** Removes duplicate rows based on the provided unique key */
-export function removeDuplicates(records: Person[] | Membership[], uniqueField): any[] {
+export function removeDuplicates(records: Person[] | Membership[], uniqueField: string): any[] {
 
     // Array of encountered records and duplicates filtered out
     let encountered = [];
