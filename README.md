@@ -13,11 +13,11 @@ The logic of the lambda function lives within the `src` directory, with the `han
 
 ## Development
 While developing, do the following
- - Use the command `serverless invoke local -f index` in the to invoke the lambda function locally. Note: You'll need to provide an event with an object of the following format
+ - Use the command `serverless invoke local -f index --path` in the to invoke the lambda function locally. Note: You'll need to provide an event with an object of the following format
     ```
     { report: 'Transactions', reportId: 'TransactionsReport' }
     ```
-    You can do this by modifying the `handler.ts` file directly to provide the above input. The `report` field determines the name of the file. It should be be the same as the report id but without the appended 'report' keyword.
+    You can do this by modifying the `event.json` file directly to provide the above input. The `report` field determines the name of the file. It should be be the same as the report id but without the appended 'report' keyword.
 
  
 ## Deployment
