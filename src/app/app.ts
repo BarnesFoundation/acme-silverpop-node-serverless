@@ -90,7 +90,7 @@ function getReportFromEndpoint(reportType: ReportEnums, requestUrl: string): req
 		return request.get(options)
 	}
 	catch (error) {
-		console.log('An error occurred: ', error);
+		console.log(`An error occurred retrieving: ${reportType} from ACME`, error);
 	}
 }
 
@@ -111,7 +111,7 @@ async function uploadToSFTP(csv, csvName, possibleError) {
 	let Readable = require('stream').Readable;
 	let stream = new Readable;
 
-	let sftpPath = '/upload/' + csvName;
+	let sftpPath = `/upload/${csvName}`;
 
 	// Add the CSV to the stream and newline to signify end of stream
 	stream.push(csv);
@@ -126,7 +126,7 @@ async function uploadToSFTP(csv, csvName, possibleError) {
 		successfulUpload = true;
 	}
 	catch (error) {
-		console.log('An error occurred uploading to ' + sftpPath + ' in the SFTP site', error);
+		console.log(`An error occurred uploading to ${sftpPath} in the SFTP site`, error);
 
 		// Return that an error occurred during the sftp upload
 		possibleError = error;
