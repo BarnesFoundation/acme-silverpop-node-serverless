@@ -13,7 +13,7 @@ The logic of the lambda function lives within the `src` directory, with the `han
 
 ## Development
 While developing, do the following
- - Use the command `serverless invoke local -f index --path` in the to invoke the lambda function locally. Note: You'll need to provide an event with an object of the following format
+ - Use the command `serverless invoke local -f index --path event.json` in the to invoke the lambda function locally. Note: You'll need to provide an event with an object of the following format
     ```
     { report: 'Transactions', reportId: 'TransactionsReport' }
     ```
