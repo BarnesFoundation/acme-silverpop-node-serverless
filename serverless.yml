@@ -8,7 +8,7 @@ plugins:
 
 provider:
   name: aws
-  runtime: nodejs8.10
+  runtime: nodejs12.x
   profile: cjativa-acme-nightly-sync
   timeout: 900
   memorySize: 3008
