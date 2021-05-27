@@ -10,3 +10,7 @@ jspm_packages
 
 # Environment file
 .env
+
+# Private Barnes files
+private
+serverless.yml

@@ -48,7 +48,7 @@ async function main(input: Input, cb: Callback) {
 /** Sets the report to be executed and uploaded */
 function setReport(reportId): AcmeReport {
 
-	// Match report to be exected
+	// Match report to be executed
 	switch (reportId) {
 
 		case ReportEnums.SALES_REPORT:
