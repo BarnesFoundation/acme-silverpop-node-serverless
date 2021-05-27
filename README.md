@@ -35,7 +35,7 @@ transactionReport: {
 
 You can test the file generation and SFTP upload locally by:
 
-1. Updating the `ENV` environment variable to `TEST`. This will append `-test` to the end of the generated file so that Silverpoint/Acoustic will not process it. 
+1. Updating the `ENV` environment variable to `TEST`. This will append `-test` to the end of the generated file so that Acoustic will not process it. 
 2. Update `event.json` file with the report that you would like to generate. The JSON object should have an [Input type](src/app/interfaces/input.interface.ts) and should have the following key/value pairs:
 
     - `report`: Name for the final generated report.
