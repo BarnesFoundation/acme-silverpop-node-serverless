@@ -14,6 +14,8 @@ const Config = {
     sftpPassword: process.env.SFTP_PASSWORD,
 
     environment: process.env.ENV,
+
+    encryptionSecretKey: process.env.ENCRYPTION_SECRET_KEY,
 };
 
 export { Config };
