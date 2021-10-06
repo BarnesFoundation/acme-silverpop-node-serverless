@@ -24,8 +24,8 @@ describe("CryptoService", () => {
 
         it.skip("should throw an error if unsuccessful", () => {
             // Skipping this test because mocking crypto is not working
-            jest.genMockFromModule("crypto")
-            crypto.createCipheriv.mockImplementationOnce(() => { throw new Error("Encryption failed") })
+            // jest.genMockFromModule("crypto")
+            // crypto.createCipheriv.mockImplementationOnce(() => { throw new Error("Encryption failed") })
             expect(() => encrypt(secret)).toThrow(Error)
         })
     })
