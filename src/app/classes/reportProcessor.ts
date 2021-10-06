@@ -67,7 +67,7 @@ export function createCSV(records: any[], headers?: string[]): Promise<string> {
 }
 
 /** Generates a key-value array containing the properties of an object */
-function generateHeaders(record: {}): string[] {
+export function generateHeaders(record: {}): string[] {
 
     const headers = [];
     const properties = Object.getOwnPropertyNames(record)
