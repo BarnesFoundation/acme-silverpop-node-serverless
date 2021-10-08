@@ -7,4 +7,7 @@ module.exports = {
     modulePaths: [
         '<rootDir>'
     ],
+    setupFiles: [
+        "<rootDir>.jest/setEnvVars.js",
+      ],
 }
