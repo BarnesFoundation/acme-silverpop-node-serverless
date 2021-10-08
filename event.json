@@ -1,1 +1,4 @@
-{ "report": "Transactions", "reportId": "TransactionsReport" }
+{
+    "report": "Memberships",
+    "reportId": "MembershipsReport"
+}

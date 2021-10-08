@@ -71,7 +71,7 @@ class Membership extends BaseReport {
         this.CardCustomerEmail = CardCustomerEmail;
         this.CardCustomerFirstName = CardCustomerFirstName;
         this.CardCustomerLastName = CardCustomerLastName;
-        this.LogInLink = Membership.formatLoginLink(MembershipExternalMembershipId, Membership.expiry);
+        this.LogInLink = MembershipStanding === "Active" ? Membership.formatLoginLink(MembershipExternalMembershipId, Membership.expiry) : "";
         this.LogInLinkExp = this.formatDate(Membership.expiry);
     }
 
@@ -95,7 +95,7 @@ class Membership extends BaseReport {
         expiry.setSeconds(59)
         // Set expiry date to 3 days from now
         expiry.setDate(expiry.getDate() + 3)
-        console.log("getting expiry...", expiry)
+
         return expiry.toISOString();
     }
 
