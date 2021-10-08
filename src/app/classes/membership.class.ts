@@ -71,7 +71,7 @@ class Membership extends BaseReport {
         this.CardCustomerEmail = CardCustomerEmail;
         this.CardCustomerFirstName = CardCustomerFirstName;
         this.CardCustomerLastName = CardCustomerLastName;
-        this.LogInLink = MembershipStanding === "Active" ? Membership.formatLoginLink(MembershipExternalMembershipId, Membership.expiry) : "";
+        this.LogInLink = Membership.formatLoginLink(MembershipExternalMembershipId, Membership.expiry);
         this.LogInLinkExp = this.formatDate(Membership.expiry);
     }
 

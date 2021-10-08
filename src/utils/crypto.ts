@@ -9,14 +9,8 @@ const iv = "96539eed52ceb0ef068dca51d2cc80cc";
  * @returns {string} - The decrypted string.
  */
 const decrypt = (encryptedString: string): string => {
-    // @ts-ignore
-    const key: Buffer = crypto.scryptSync(
-        Config.encryptionSecretKey,
-        "salt",
-        24
-    );
-
     try {
+        const key = Buffer.from(Config.encryptionSecretKey)
         const bufferText = Buffer.from(encryptedString, "hex");
         const decipher = crypto.createDecipheriv(
             algorithm,
@@ -38,14 +32,8 @@ const decrypt = (encryptedString: string): string => {
  * @returns {string} - The encrypted string.
  */
 const encrypt = (stringToEncrypt: string): string => {
-    // @ts-ignore
-    const key: Buffer = crypto.scryptSync(
-        Config.encryptionSecretKey,
-        "salt",
-        24
-    );
-
     try {
+        const key = Buffer.from(Config.encryptionSecretKey)
         const cipher = crypto.createCipheriv(
             algorithm,
             key,
