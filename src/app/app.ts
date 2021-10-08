@@ -155,7 +155,7 @@ async function modifyReportRecords(reportRecords: Person[] | Membership[] | Tran
 			records = rp.removeDuplicates(records, 'CardCustomerEmail');
 
 			// Create CSV with these headers only
-			csv = await rp.createCSV(records, ['MembershipNumber', 'MembershipLevelName', 'MembershipOfferingName', 'MembershipSource', 'MembershipExternalMembershipId', 'MembershipJoinDate', 'MembershipStartDate', 'MembershipExpirationDate', 'MembershipDuration', 'MembershipStanding', 'MembershipIsGifted', 'RE_MembershipProgramName', 'RE_MembershipCategoryName', 'RE_MembershipFund', 'RE_MembershipCampaign', 'RE_MembershipAppeal', 'CardType', 'CardName', 'CardStartDate', 'CardExpirationDate', 'CardCustomerPrimaryCity', 'CardCustomerPrimaryState', 'CardCustomerPrimaryZip', 'CardCustomerEmail']);
+			csv = await rp.createCSV(records, ['MembershipNumber', 'MembershipLevelName', 'MembershipOfferingName', 'MembershipSource', 'MembershipExternalMembershipId', 'MembershipJoinDate', 'MembershipStartDate', 'MembershipExpirationDate', 'MembershipDuration', 'MembershipStanding', 'MembershipIsGifted', 'RE_MembershipProgramName', 'RE_MembershipCategoryName', 'RE_MembershipFund', 'RE_MembershipCampaign', 'RE_MembershipAppeal', 'CardType', 'CardName', 'CardStartDate', 'CardExpirationDate', 'CardCustomerPrimaryCity', 'CardCustomerPrimaryState', 'CardCustomerPrimaryZip', 'CardCustomerEmail', 'LogInLink', 'LogInLinkExp']);
 			break;
 		}
 
