@@ -1,26 +1,11 @@
-import * as crypto from "crypto";
-import { Config } from "./config";
-
-const algorithm = "aes-192-cbc";
-const iv = "96539eed52ceb0ef068dca51d2cc80cc";
-
 /**
- * @param {string} encryptedString - The string to be decrypted.
+ * @param {string} encryptedString - The base64 string to be decrypted.
  * @returns {string} - The decrypted string.
  */
 const decrypt = (encryptedString: string): string => {
     try {
-        const key = Buffer.from(Config.encryptionSecretKey)
-        const bufferText = Buffer.from(encryptedString, "hex");
-        const decipher = crypto.createDecipheriv(
-            algorithm,
-            key,
-            Buffer.from(iv, "hex")
-        );
-        let decrypted = decipher.update(bufferText);
-        decrypted = Buffer.concat([decrypted, decipher.final()]);
-
-        return decrypted.toString();
+        const buffer = Buffer.from(encryptedString, "base64");
+        return buffer.toString('utf8');
     } catch (e) {
         console.log(`Could not decrypt due to ${e}`);
         throw new Error(`Could not decrypt due to ${e}`);
@@ -29,20 +14,12 @@ const decrypt = (encryptedString: string): string => {
 
 /**
  * @param {string} stringToEncrypt - The string to be encrypted
- * @returns {string} - The encrypted string.
+ * @returns {string} - The base64 encrypted string.
  */
 const encrypt = (stringToEncrypt: string): string => {
     try {
-        const key = Buffer.from(Config.encryptionSecretKey)
-        const cipher = crypto.createCipheriv(
-            algorithm,
-            key,
-            Buffer.from(iv, "hex")
-        );
-        const encryptedString =
-            cipher.update(stringToEncrypt, "utf8", "hex") + cipher.final("hex");
-
-        return encryptedString;
+        const buffer = Buffer.from(stringToEncrypt, 'utf8')
+        return buffer.toString('base64');
     } catch (error) {
         console.log(`An error occurred encrypting the string`, error);
     }
