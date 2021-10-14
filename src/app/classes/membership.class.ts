@@ -72,9 +72,8 @@ class Membership extends BaseReport {
         this.CardCustomerEmail = CardCustomerEmail;
         this.CardCustomerFirstName = CardCustomerFirstName;
         this.CardCustomerLastName = CardCustomerLastName;
-        const baseLoginLink = Membership.formatLoginLink(MembershipExternalMembershipId, Membership.unixExpiry);
-        this.LogInLink = baseLoginLink
-        this.RenewLink = `${baseLoginLink}${Membership.renewRedirect}`
+        this.LogInLink = Membership.formatLoginLink(MembershipExternalMembershipId, Membership.unixExpiry);
+        this.RenewLink = Membership.formatLoginLink(MembershipExternalMembershipId, Membership.unixExpiry, "/renew");
         this.LinkExp = this.formatDate(Membership.expiry);
     }
 
@@ -84,9 +83,9 @@ class Membership extends BaseReport {
     static unixExpiry: string = (new Date(Membership.expiry).getTime() / 1000).toFixed(0);
     static renewRedirect: string = encrypt(",/renew")
 
-    static formatLoginLink(id: string, unixDate: string): string {
+    static formatLoginLink(id: string, unixDate: string, redirect?: string): string {
         try {
-            const e = encrypt(`${id},${unixDate}`)
+            const e = encrypt(`${id},${unixDate},${redirect}`)
             return `https://members.barnesfoundation.org/ml?e=${e}`
 
         } catch (e) {
