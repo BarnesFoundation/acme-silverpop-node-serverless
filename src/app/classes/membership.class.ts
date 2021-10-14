@@ -81,11 +81,16 @@ class Membership extends BaseReport {
     static today: Date = Membership.getToday(new Date())
     static expiry: string = Membership.getExpirationTime(new Date());
     static unixExpiry: string = (new Date(Membership.expiry).getTime() / 1000).toFixed(0);
-    static renewRedirect: string = encrypt(",/renew")
 
     static formatLoginLink(id: string, unixDate: string, redirect?: string): string {
         try {
-            const e = encrypt(`${id},${unixDate},${redirect}`)
+            const params = [id, unixDate]
+
+            if (redirect) {
+                params[2] = redirect;
+            }
+
+            const e = encrypt(params.join(","))
             return `https://members.barnesfoundation.org/ml?e=${e}`
 
         } catch (e) {
