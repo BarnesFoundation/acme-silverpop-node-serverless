@@ -1,4 +1,3 @@
-import * as crypto from "crypto";
 import { decrypt, encrypt } from "../../utils/crypto";
 
 describe("CryptoService", () => {
@@ -12,7 +11,7 @@ describe("CryptoService", () => {
         it.skip("should throw an error if unsuccessful", () => {
             // Skipping test because mocking isn't working as expected
             const encrypted = "imafakeencryptedstring";
-            sinon.stub(Buffer, "toString").throws("Counld not decrypt string")
+            // sinon.stub(Buffer, "toString").throws("Counld not decrypt string")
             expect(() => decrypt(encrypted)).toThrow(Error)
         })
     })
@@ -26,7 +25,7 @@ describe("CryptoService", () => {
 
         it.skip("should throw an error if unsuccessful", () => {
             // Skipping test because mocking isn't working as expected
-            sinon.stub(Buffer, "from").throws("Could not encrypt string")
+            // sinon.stub(Buffer, "from").throws("Could not encrypt string")
             expect(() => encrypt(secret)).toThrow(Error)
         })
     })

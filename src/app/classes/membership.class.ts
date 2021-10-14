@@ -29,7 +29,8 @@ class Membership extends BaseReport {
     CardCustomerFirstName?: string;
     CardCustomerLastName?: string;
     LogInLink?: string;
-    LogInLinkExp?: string;
+    RenewLink?: string;
+    LinkExp?: string;
 
     constructor(
         MembershipNumber: string, MembershipLevelName: string, MembershipOfferingName: string,
@@ -71,19 +72,22 @@ class Membership extends BaseReport {
         this.CardCustomerEmail = CardCustomerEmail;
         this.CardCustomerFirstName = CardCustomerFirstName;
         this.CardCustomerLastName = CardCustomerLastName;
-        this.LogInLink = Membership.formatLoginLink(MembershipExternalMembershipId, Membership.expiry);
-        this.LogInLinkExp = this.formatDate(Membership.expiry);
+        const baseLoginLink = Membership.formatLoginLink(MembershipExternalMembershipId, Membership.unixExpiry);
+        this.LogInLink = baseLoginLink
+        this.RenewLink = `${baseLoginLink}${Membership.renewRedirect}`
+        this.LinkExp = this.formatDate(Membership.expiry);
     }
 
     // Class attributes for dates since the logic will be same for every member
     static today: Date = Membership.getToday(new Date())
     static expiry: string = Membership.getExpirationTime(new Date());
+    static unixExpiry: string = (new Date(Membership.expiry).getTime() / 1000).toFixed(0);
+    static renewRedirect: string = encrypt(",/renew")
 
-    static formatLoginLink(id: string, isoDate: string): string {
+    static formatLoginLink(id: string, unixDate: string): string {
         try {
-            const u = encrypt(id);
-            const x = encrypt(isoDate);
-            return `https://members.barnesfoundation.org/ml?u=${u}&x=${x}`
+            const e = encrypt(`${id},${unixDate}`)
+            return `https://members.barnesfoundation.org/ml?e=${e}`
 
         } catch (e) {
             return ""
