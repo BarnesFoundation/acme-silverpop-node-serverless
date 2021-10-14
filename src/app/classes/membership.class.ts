@@ -75,7 +75,9 @@ class Membership extends BaseReport {
         this.LogInLinkExp = this.formatDate(Membership.expiry);
     }
 
-    static expiry = Membership.getExpirationTime(new Date());
+    // Class attributes for dates since the logic will be same for every member
+    static today: Date = Membership.getToday(new Date())
+    static expiry: string = Membership.getExpirationTime(new Date());
 
     static formatLoginLink(id: string, isoDate: string): string {
         try {
@@ -88,15 +90,45 @@ class Membership extends BaseReport {
         }
     }
 
-    static getExpirationTime(expiry: Date): string {
-        // Set expiry time to 11:59:59pm
-        expiry.setHours(23)
-        expiry.setMinutes(59)
-        expiry.setSeconds(59)
+    /**
+     * @param {Date} date - Current date
+     * @returns {Date} - Current date with time set to 11:59:59 pm Eastern time.
+     */
+    static getToday(date: Date): Date {
+        // Set time to 11:59:59pm
+        date.setHours(23)
+        date.setMinutes(59)
+        date.setSeconds(59)
+
+        return date;
+    }
+
+    /**
+     * @param {Date} date - Current date
+     * @returns {string} - ISO string for date 3 days in future.
+     */
+    static getExpirationTime(date: Date): string {
+        const expiry = Membership.getToday(date)
         // Set expiry date to 3 days from now
         expiry.setDate(expiry.getDate() + 3)
 
         return expiry.toISOString();
+    }
+
+    /**
+     * @param {string} MembershipExpirationDate - ISO string of membership expiration date
+     * @returns {boolean} - Whether or not the membership is within the renewal period. 
+     */
+    static canRenew(MembershipExpirationDate: string): boolean {
+        // Max date for renewal is one month after expiration
+        const maxDate = new Date(MembershipExpirationDate);
+        maxDate.setMonth(maxDate.getMonth() + 1);
+
+        // Min date for renewal is three months before expiration
+        const minDate = new Date(MembershipExpirationDate);
+        minDate.setMonth(minDate.getMonth() - 3);
+
+        return minDate <= Membership.today && Membership.today <= maxDate;
     }
 
 }
