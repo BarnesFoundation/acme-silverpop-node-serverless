@@ -91,7 +91,7 @@ class Membership extends BaseReport {
             }
 
             const e = encrypt(params.join(","))
-            return `https://members.barnesfoundation.org/ml?e=${e}`
+            return `ml?e=${e}`
 
         } catch (e) {
             return ""
