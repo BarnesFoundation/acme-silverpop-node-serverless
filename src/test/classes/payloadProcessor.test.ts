@@ -1,4 +1,4 @@
-import { processToRecords } from "../../app/classes/payloadProcessor"
+import { processToRecords, getUnixExpiry } from "../../app/classes/payloadProcessor"
 import { Person } from "../../app/classes/person.class"
 import { ResultItem } from "../../app/interfaces/acmeReportPayload.interface";
 import { ReportEnums } from "../../app/enums/report.enums"
@@ -35,6 +35,13 @@ describe("PayloadProcessor", () => {
             results.forEach((result, i: number) => {
                 expect(result).toMatchObject(expectedResults[i])
             });
+        })
+    })
+
+    describe("getUnixExpiry", () => {
+        it("should return unix timestamp given a Date object", () => {
+            const date = new Date("10/10/2021")
+            expect(getUnixExpiry(date)).toBe("1634183999")
         })
     })
 })

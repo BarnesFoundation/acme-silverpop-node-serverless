@@ -13,6 +13,8 @@ const Config = {
     sftpUsername: process.env.STFP_USERNAME,
     sftpPassword: process.env.SFTP_PASSWORD,
 
+    utilsApiUrl: process.env.UTILS_API_URL,
+
     environment: process.env.ENV,
 };
 

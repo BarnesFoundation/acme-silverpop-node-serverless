@@ -6,8 +6,10 @@ import { ResultItem } from '@interfaces/acmeReportPayload.interface';
 
 /** Processes the provided results array into typed objects */
 export function processToRecords(resultsList: ResultItem[], reportType): Person[] | Transaction[] | Membership[] {
+    // Expiration date for generating login links for Membership objects
+    const unixExpiry: string = getUnixExpiry(new Date())
 
-    let records = []; 
+    let records = [];
     // fields array includes all column titles (fields) from the ACME report
     let fields: string[] = [];
 
@@ -16,8 +18,38 @@ export function processToRecords(resultsList: ResultItem[], reportType): Person[
     let fieldValues = resultsList.reduce((accumulator, element: ResultItem) => {
         accumulator[element.fieldName] = element.values;
         fields.push(element.fieldName);
+
+        // Generate LoginLink and RenewLink field and record for MembershipsReport
+        if (reportType === ReportEnums.MEMBERSHIP_REPORT && element.fieldName === "MembershipExternalMembershipId") {
+            // Create array with values to be encrypted for the LogInLink
+            const logInLinkValues = element.values.map(value => [value, unixExpiry].join(","))
+
+            // Create array with values to be encrypted for the RenewLink
+            const renewLinkValues = element.values.map(value => [value, unixExpiry, "/renew"].join(","))
+
+            // Encrypt values and add to accumulator
+            const encryptedLogInValues = []
+            const encryptedRenewValues = []
+
+            // Create array with values for the LinkExp
+            const linkExpValues = Array(element.values.length).fill(unixExpiry)
+
+            // Add fields to accumulator
+            const loginLinkField = "LogInLink"
+            const renewLinkField = "RenewLink"
+            const linkExp = "LinkExp"
+            accumulator[loginLinkField] = encryptedLogInValues;
+            fields.push(loginLinkField)
+            accumulator[renewLinkField] = encryptedRenewValues;
+            fields.push(renewLinkField)
+            accumulator[linkExp] = linkExpValues;
+            fields.push(linkExp)
+        }
+
         return accumulator;
-    }, [[]]); 
+    }, [[]]);
+
+
 
     let resultCount = fieldValues[fields[0]].length;
 
@@ -52,4 +84,18 @@ function objectFactory(r, objectType: string): Person | Transaction | Membership
         case ReportEnums.SALES_REPORT:
             return r;
     }
+}
+
+/** 
+ * @param {Date} date - 
+ * @returns {string} - Date 3 days from the given date as a unix timestamp
+*/
+export function getUnixExpiry(date: Date): string {
+    // Set time to 11:59:59pm and date 3 days from now
+    date.setHours(23)
+    date.setMinutes(59)
+    date.setSeconds(59)
+    date.setDate(date.getDate() + 3)
+
+    return (date.getTime() / 1000).toFixed(0);
 }
