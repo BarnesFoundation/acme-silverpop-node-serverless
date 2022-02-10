@@ -7,24 +7,28 @@ import { ResultItem } from '@interfaces/acmeReportPayload.interface';
 /** Processes the provided results array into typed objects */
 export function processToRecords(resultsList: ResultItem[], reportType): Person[] | Transaction[] | Membership[] {
 
-    let records = [];
-    let fields = [];
+    let records = []; 
+    // fields array includes all column titles (fields) from the ACME report
+    let fields: string[] = [];
 
     // Map the values array to the field name it corresponds to
+    // each object in the fieldValues array represents a column from the ACME report with the key being the column title (field)
     let fieldValues = resultsList.reduce((accumulator, element: ResultItem) => {
         accumulator[element.fieldName] = element.values;
         fields.push(element.fieldName);
         return accumulator;
-    }, [[]]);
+    }, [[]]); 
 
     let resultCount = fieldValues[fields[0]].length;
 
     // Create a record from the field values
     for (let h = 0; h < resultCount; h++) {
         let record = {};
+        // Go through each column/field from the ACME report and find the value for a single row
         for (let i = 0; i < fields.length; i++) {
             record[fields[i]] = fieldValues[fields[i]][h];
         }
+        // Create an object from the data from a single row
         records.push(objectFactory(record, reportType));
     }
     return records;
