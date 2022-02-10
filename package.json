@@ -7,6 +7,7 @@
     "test": "jest src/test"
   },
   "dependencies": {
+    "axios": "^0.25.0",
     "crypto": "^1.0.1",
     "csv-parse": "^4.15.4",
     "csv-stringify": "^4.3.1",

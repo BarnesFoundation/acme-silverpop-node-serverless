@@ -1,11 +1,15 @@
-import { processToRecords, getUnixExpiry } from "../../app/classes/payloadProcessor"
+import { processToRecords, getUnixExpiry, generateMembershipLinks } from "../../app/classes/payloadProcessor"
 import { Person } from "../../app/classes/person.class"
 import { ResultItem } from "../../app/interfaces/acmeReportPayload.interface";
 import { ReportEnums } from "../../app/enums/report.enums"
+import axios from "axios";
+import { mocked } from "ts-jest/utils";
+
+jest.mock("axios");
 
 describe("PayloadProcessor", () => {
     describe("processToRecords", () => {
-        it("should process results array into typed objects", () => {
+        it("should process results array into typed objects", async () => {
             const reportType = ReportEnums.CONTACT_REPORT;
             const expectedResults: Person[] = [
                 {
@@ -30,7 +34,7 @@ describe("PayloadProcessor", () => {
                     "ZipCode": "12345",
                 },
             ]
-            const results = processToRecords(resultsList, reportType)
+            const results = await processToRecords(resultsList, reportType)
 
             results.forEach((result, i: number) => {
                 expect(result).toMatchObject(expectedResults[i])
@@ -42,6 +46,29 @@ describe("PayloadProcessor", () => {
         it("should return unix timestamp given a Date object", () => {
             const date = new Date("10/10/2021")
             expect(getUnixExpiry(date)).toBe("1634183999")
+        })
+    })
+
+    describe("generateMembershipLinks", () => {
+        const values = ["123,0987,/renew", "456,12324,/renew", "789,123456,/renew"]
+
+        it("should return an array of encrypted strings given an array of strings", async () => {
+            const encrypted = ['some', 'encrypted', 'strings']
+            const payload: any = { status: 200, data: { encrypted } }
+            mocked(axios).mockImplementation(() => Promise.resolve(payload))
+            expect(await generateMembershipLinks(values)).toMatchObject({
+                encryptedLogInValues: encrypted,
+                encryptedRenewValues: encrypted
+            })
+        })
+
+        it("should return an empty array if the call to the utils API is unsuccessful", async () => {
+            const payload: any = { status: 500 }
+            mocked(axios).mockImplementation(() => Promise.resolve(payload))
+            expect(await generateMembershipLinks(values)).toMatchObject({
+                encryptedLogInValues: [],
+                encryptedRenewValues: []
+            })
         })
     })
 })

@@ -1,54 +1,47 @@
+import axios from "axios";
 import { ReportEnums } from '@enums/report.enums';
 import { Person } from '@classes/person.class';
 import { Transaction } from '@classes/transaction.class';
 import { Membership } from '@classes/membership.class';
 import { ResultItem } from '@interfaces/acmeReportPayload.interface';
+import { Config } from "@utils/config";
 
 /** Processes the provided results array into typed objects */
-export function processToRecords(resultsList: ResultItem[], reportType): Person[] | Transaction[] | Membership[] {
-    // Expiration date for generating login links for Membership objects
-    const unixExpiry: string = getUnixExpiry(new Date())
-
+export async function processToRecords(resultsList: ResultItem[], reportType): Promise<Person[] | Transaction[] | Membership[]> {
+    // Formatted records for the sync
     let records = [];
     // fields array includes all column titles (fields) from the ACME report
     let fields: string[] = [];
+    // each object in the fieldValues array represents a column from the ACME report with the key being the column title (field)
+    let fieldValues = {}
 
     // Map the values array to the field name it corresponds to
-    // each object in the fieldValues array represents a column from the ACME report with the key being the column title (field)
-    let fieldValues = resultsList.reduce((accumulator, element: ResultItem) => {
-        accumulator[element.fieldName] = element.values;
+    resultsList.forEach(async (element: ResultItem) => {
+        fieldValues[element.fieldName] = element.values;
         fields.push(element.fieldName);
 
         // Generate LoginLink and RenewLink field and record for MembershipsReport
         if (reportType === ReportEnums.MEMBERSHIP_REPORT && element.fieldName === "MembershipExternalMembershipId") {
-            // Create array with values to be encrypted for the LogInLink
-            const logInLinkValues = element.values.map(value => [value, unixExpiry].join(","))
+            const {
+                encryptedLogInValues, encryptedRenewValues, linkExpValues
+            } = await generateMembershipLinks(element.values);
 
-            // Create array with values to be encrypted for the RenewLink
-            const renewLinkValues = element.values.map(value => [value, unixExpiry, "/renew"].join(","))
+            const loginLinkField = "LogInLink";
+            const renewLinkField = "RenewLink";
+            const linkExp = "LinkExp";
 
-            // Encrypt values and add to accumulator
-            const encryptedLogInValues = []
-            const encryptedRenewValues = []
+            // Add fields to fieldValues
+            fieldValues[loginLinkField] = encryptedLogInValues;
+            fields.push(loginLinkField);
 
-            // Create array with values for the LinkExp
-            const linkExpValues = Array(element.values.length).fill(unixExpiry)
+            fieldValues[renewLinkField] = encryptedRenewValues;
+            fields.push(renewLinkField);
 
-            // Add fields to accumulator
-            const loginLinkField = "LogInLink"
-            const renewLinkField = "RenewLink"
-            const linkExp = "LinkExp"
-            accumulator[loginLinkField] = encryptedLogInValues;
-            fields.push(loginLinkField)
-            accumulator[renewLinkField] = encryptedRenewValues;
-            fields.push(renewLinkField)
-            accumulator[linkExp] = linkExpValues;
-            fields.push(linkExp)
+            fieldValues[linkExp] = linkExpValues;
+            fields.push(linkExp);
         }
 
-        return accumulator;
-    }, [[]]);
-
+    })
 
 
     let resultCount = fieldValues[fields[0]].length;
@@ -87,7 +80,7 @@ function objectFactory(r, objectType: string): Person | Transaction | Membership
 }
 
 /** 
- * @param {Date} date - 
+ * @param {Date} date
  * @returns {string} - Date 3 days from the given date as a unix timestamp
 */
 export function getUnixExpiry(date: Date): string {
@@ -98,4 +91,62 @@ export function getUnixExpiry(date: Date): string {
     date.setDate(date.getDate() + 3)
 
     return (date.getTime() / 1000).toFixed(0);
+}
+
+/**
+ * @param {string[]} values - Array of field values from ACME report column
+ * @returns {{ 
+ *      encryptedLogInValues: string[]; 
+ *      encryptedRenewValues: string[]; 
+ *      linkExpValues: string[];
+ * }} - Object with arrays of encrypted strings
+ */
+export async function generateMembershipLinks(values) {
+    // Expiration date for generating login links for Membership objects
+    const unixExpiry: string = getUnixExpiry(new Date())
+
+    // Create array with values to be encrypted for the LogInLink
+    const logInLinkValues = values.map(value => [value, unixExpiry].join(","))
+
+    // Create array with values to be encrypted for the RenewLink
+    const renewLinkValues = values.map(value => [value, unixExpiry, "/renew"].join(","))
+
+    // Create array with values for the LinkExp
+    const linkExpValues = Array(values.length).fill(unixExpiry)
+
+    // Encrypted values
+    let encryptedLogInValues = []
+    let encryptedRenewValues = []
+
+    try {
+        const respLogin = await axios({
+            method: "post",
+            baseURL: Config.utilsApiUrl,
+            url: "/encrypt/base64/batch",
+            data: {
+                strings: logInLinkValues.join(",")
+            }
+        })
+
+        if (respLogin.status === 200) {
+            encryptedLogInValues = respLogin.data.encrypted;
+        }
+
+        const respRenew = await axios({
+            method: "post",
+            baseURL: Config.utilsApiUrl,
+            url: "/encrypt/base64/batch",
+            data: {
+                strings: renewLinkValues.join(",")
+            }
+        })
+
+        if (respRenew.status === 200) {
+            encryptedRenewValues = respRenew.data.encrypted;
+        }
+
+        return { encryptedLogInValues, encryptedRenewValues, linkExpValues }
+    } catch (e) {
+        console.log("Could not encrypt member links due to", e)
+    }
 }
