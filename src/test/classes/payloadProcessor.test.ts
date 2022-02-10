@@ -45,7 +45,7 @@ describe("PayloadProcessor", () => {
     describe("getUnixExpiry", () => {
         it("should return unix timestamp given a Date object", () => {
             const date = new Date("10/10/2021")
-            expect(getUnixExpiry(date)).toBe("1634183999")
+            expect(getUnixExpiry(date)).toBe(1634183999)
         })
     })
 

@@ -8,8 +8,6 @@ import { Config } from "@utils/config";
 
 /** Processes the provided results array into typed objects */
 export async function processToRecords(resultsList: ResultItem[], reportType): Promise<Person[] | Transaction[] | Membership[]> {
-    // Formatted records for the sync
-    let records = [];
     // fields array includes all column titles (fields) from the ACME report
     let fields: string[] = [];
     // each object in the fieldValues array represents a column from the ACME report with the key being the column title (field)
@@ -45,6 +43,8 @@ export async function processToRecords(resultsList: ResultItem[], reportType): P
 
 
     let resultCount = fieldValues[fields[0]].length;
+    // Formatted records for the sync
+    let records = [];
 
     // Create a record from the field values
     for (let h = 0; h < resultCount; h++) {
@@ -72,7 +72,23 @@ function objectFactory(r, objectType: string): Person | Transaction | Membership
                 r.ItemName, r.CouponCode, r.CouponName, r.EventName, r.EventStartTime, r.TicketType, r.AddOn, r.Quantity, r.DiscountedUnitPrice, r.PaymentAmount, r.Email, r.EventTemplateCustomField2, r.TransactionId, r.OrderNumber, '', '', r.TransactionItemId, r.TransactionDate);
 
         case ReportEnums.MEMBERSHIP_REPORT:
-            return new Membership(r.MembershipNumber, r.MembershipLevelName, r.MembershipOfferingName, r.MembershipSource, r.MembershipExternalMembershipId, r.MembershipJoinDate, r.MembershipStartDate, r.MembershipExpirationDate, r.MembershipDuration, r.MembershipStanding, r.MembershipIsGifted, r.RE_MembershipProgramName, r.RE_MembershipCategoryName, r.RE_MembershipFund, r.RE_MembershipCampaign, r.RE_MembershipAppeal, r.CardType, r.CardName, r.CardStartDate, r.CardExpirationDate, r.CardCustomerPrimaryCity, r.CardCustomerPrimaryState, r.CardCustomerPrimaryZip, r.CardCustomerEmail, r.CardCustomerFirstName, r.CardCustomerLastName);
+            return new Membership({
+                MembershipNumber: r.MembershipNumber, MembershipLevelName: r.MembershipLevelName, 
+                MembershipOfferingName: r.MembershipOfferingName, MembershipSource: r.MembershipSource, 
+                MembershipExternalMembershipId: r.MembershipExternalMembershipId, 
+                MembershipJoinDate: r.MembershipJoinDate, MembershipStartDate: r.MembershipStartDate, 
+                MembershipExpirationDate: r.MembershipExpirationDate, MembershipDuration: r.MembershipDuration,
+                MembershipStanding: r.MembershipStanding, MembershipIsGifted: r.MembershipIsGifted, 
+                RE_MembershipProgramName: r.RE_MembershipProgramName, 
+                RE_MembershipCategoryName: r.RE_MembershipCategoryName, RE_MembershipFund: r.RE_MembershipFund, 
+                RE_MembershipCampaign: r.RE_MembershipCampaign, RE_MembershipAppeal: r.RE_MembershipAppeal, 
+                CardType: r.CardType, CardName: r.CardName, CardStartDate: r.CardStartDate,
+                CardExpirationDate: r.CardExpirationDate, CardCustomerPrimaryCity: r.CardCustomerPrimaryCity, 
+                CardCustomerPrimaryState: r.CardCustomerPrimaryState, CardCustomerPrimaryZip: r.CardCustomerPrimaryZip, 
+                CardCustomerEmail: r.CardCustomerEmail, CardCustomerFirstName: r.CardCustomerFirstName,
+                CardCustomerLastName: r.CardCustomerLastName, LoginLink: r.LoginLink, 
+                RenewLink: r.RenewLink, LinkExp: r.LinkExp
+            });
 
         case ReportEnums.SALES_REPORT:
             return r;
@@ -81,16 +97,16 @@ function objectFactory(r, objectType: string): Person | Transaction | Membership
 
 /** 
  * @param {Date} date
- * @returns {string} - Date 3 days from the given date as a unix timestamp
+ * @returns {number} - Date 3 days from the given date as a unix timestamp
 */
-export function getUnixExpiry(date: Date): string {
+export function getUnixExpiry(date: Date): number {
     // Set time to 11:59:59pm and date 3 days from now
     date.setHours(23)
     date.setMinutes(59)
     date.setSeconds(59)
     date.setDate(date.getDate() + 3)
 
-    return (date.getTime() / 1000).toFixed(0);
+    return Math.round(date.getTime() / 1000);
 }
 
 /**
@@ -103,7 +119,7 @@ export function getUnixExpiry(date: Date): string {
  */
 export async function generateMembershipLinks(values) {
     // Expiration date for generating login links for Membership objects
-    const unixExpiry: string = getUnixExpiry(new Date())
+    const unixExpiry: number = getUnixExpiry(new Date())
 
     // Create array with values to be encrypted for the LogInLink
     const logInLinkValues = values.map(value => [value, unixExpiry].join(","))
