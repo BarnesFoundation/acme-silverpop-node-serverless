@@ -73,20 +73,20 @@ function objectFactory(r, objectType: string): Person | Transaction | Membership
 
         case ReportEnums.MEMBERSHIP_REPORT:
             return new Membership({
-                MembershipNumber: r.MembershipNumber, MembershipLevelName: r.MembershipLevelName, 
-                MembershipOfferingName: r.MembershipOfferingName, MembershipSource: r.MembershipSource, 
-                MembershipExternalMembershipId: r.MembershipExternalMembershipId, 
-                MembershipJoinDate: r.MembershipJoinDate, MembershipStartDate: r.MembershipStartDate, 
+                MembershipNumber: r.MembershipNumber, MembershipLevelName: r.MembershipLevelName,
+                MembershipOfferingName: r.MembershipOfferingName, MembershipSource: r.MembershipSource,
+                MembershipExternalMembershipId: r.MembershipExternalMembershipId,
+                MembershipJoinDate: r.MembershipJoinDate, MembershipStartDate: r.MembershipStartDate,
                 MembershipExpirationDate: r.MembershipExpirationDate, MembershipDuration: r.MembershipDuration,
-                MembershipStanding: r.MembershipStanding, MembershipIsGifted: r.MembershipIsGifted, 
-                RE_MembershipProgramName: r.RE_MembershipProgramName, 
-                RE_MembershipCategoryName: r.RE_MembershipCategoryName, RE_MembershipFund: r.RE_MembershipFund, 
-                RE_MembershipCampaign: r.RE_MembershipCampaign, RE_MembershipAppeal: r.RE_MembershipAppeal, 
+                MembershipStanding: r.MembershipStanding, MembershipIsGifted: r.MembershipIsGifted,
+                RE_MembershipProgramName: r.RE_MembershipProgramName,
+                RE_MembershipCategoryName: r.RE_MembershipCategoryName, RE_MembershipFund: r.RE_MembershipFund,
+                RE_MembershipCampaign: r.RE_MembershipCampaign, RE_MembershipAppeal: r.RE_MembershipAppeal,
                 CardType: r.CardType, CardName: r.CardName, CardStartDate: r.CardStartDate,
-                CardExpirationDate: r.CardExpirationDate, CardCustomerPrimaryCity: r.CardCustomerPrimaryCity, 
-                CardCustomerPrimaryState: r.CardCustomerPrimaryState, CardCustomerPrimaryZip: r.CardCustomerPrimaryZip, 
+                CardExpirationDate: r.CardExpirationDate, CardCustomerPrimaryCity: r.CardCustomerPrimaryCity,
+                CardCustomerPrimaryState: r.CardCustomerPrimaryState, CardCustomerPrimaryZip: r.CardCustomerPrimaryZip,
                 CardCustomerEmail: r.CardCustomerEmail, CardCustomerFirstName: r.CardCustomerFirstName,
-                CardCustomerLastName: r.CardCustomerLastName, LoginLink: r.LoginLink, 
+                CardCustomerLastName: r.CardCustomerLastName, LoginLink: r.LoginLink,
                 RenewLink: r.RenewLink, LinkExp: r.LinkExp
             });
 
@@ -129,40 +129,51 @@ export async function generateMembershipLinks(values) {
 
     // Create array with values for the LinkExp
     const linkExpValues = Array(values.length).fill(unixExpiry)
-
-    // Encrypted values
-    let encryptedLogInValues = []
-    let encryptedRenewValues = []
+     // Encrypted values
+     let encryptedLogInValues = []
+     let encryptedRenewValues = []
 
     try {
-        const respLogin = await axios({
-            method: "post",
-            baseURL: Config.utilsApiUrl,
-            url: "/encrypt/base64/batch",
-            data: {
-                strings: logInLinkValues.join(",")
-            }
-        })
-
-        if (respLogin.status === 200) {
-            encryptedLogInValues = respLogin.data.encrypted;
-        }
-
-        const respRenew = await axios({
-            method: "post",
-            baseURL: Config.utilsApiUrl,
-            url: "/encrypt/base64/batch",
-            data: {
-                strings: renewLinkValues.join(",")
-            }
-        })
-
-        if (respRenew.status === 200) {
-            encryptedRenewValues = respRenew.data.encrypted;
-        }
-
-        return { encryptedLogInValues, encryptedRenewValues, linkExpValues }
+        encryptedLogInValues = await batchEncrypt(logInLinkValues, [], 500)
+        encryptedRenewValues = await batchEncrypt(renewLinkValues, [], 500)
     } catch (e) {
-        console.log("Could not encrypt member links due to", e)
+        console.log("Error in PayloadProcessor.generateMembershipLinks: Could not encrypt member links due to", e)
+    }
+
+    return { encryptedLogInValues, encryptedRenewValues, linkExpValues }
+}
+
+export async function batchEncrypt(strings: string[], promiseArray: Promise<any>[], batchSize) {
+    const strToEncrypt = strings.slice(0, batchSize)
+    const remainder = strings.slice(batchSize)
+
+    promiseArray.push(axios({
+        method: "post",
+        baseURL: Config.utilsApiUrl,
+        url: "/encrypt/base64/batch",
+        data: {
+            strings: strToEncrypt
+        }
+    }))
+
+    if (remainder.length) {
+        return batchEncrypt(remainder, promiseArray, batchSize)
+    } else {
+        return Promise.all(promiseArray).then(responses => {
+            const data = []
+            responses.forEach(resp => {
+                if (resp.status === 200) {
+                    data.push(...resp.data.encrypted)
+                } else {
+                    // Push empty string to the array if there was an issue encrypting a batch
+                    // Since the index of each item matters, this will preserve then indexes
+                    data.push(...Array(batchSize).fill(""))
+                }
+            })
+            return data
+        }).catch(e => {
+            console.log("Error in PayloadProcessor.batchEncrypt: Could not encrypt member links due to", e)
+            return []
+        })
     }
 }

@@ -1,7 +1,14 @@
-import { processToRecords, getUnixExpiry, generateMembershipLinks } from "../../app/classes/payloadProcessor"
+import {
+    processToRecords,
+    getUnixExpiry,
+    generateMembershipLinks,
+    batchEncrypt,
+} from "../../app/classes/payloadProcessor"
+import * as PayloadProcessor from "../../app/classes/payloadProcessor";
 import { Person } from "../../app/classes/person.class"
 import { ResultItem } from "../../app/interfaces/acmeReportPayload.interface";
 import { ReportEnums } from "../../app/enums/report.enums"
+
 import axios from "axios";
 import { mocked } from "ts-jest/utils";
 
@@ -61,14 +68,65 @@ describe("PayloadProcessor", () => {
                 encryptedRenewValues: encrypted
             })
         })
+    })
 
-        it("should return an empty array if the call to the utils API is unsuccessful", async () => {
-            const payload: any = { status: 500 }
-            mocked(axios).mockImplementation(() => Promise.resolve(payload))
-            expect(await generateMembershipLinks(values)).toMatchObject({
-                encryptedLogInValues: [],
-                encryptedRenewValues: []
-            })
+    describe("batchEncrypt", () => {
+        it("should return payload when successful", async () => {
+            jest.clearAllMocks();
+            // Mock axios to return the same payload that it is given
+            mocked(axios).mockImplementation((req: any) => Promise.resolve({
+                status: 200,
+                data: {
+                    encrypted: req.data.strings
+                }
+            } as any))
+            const strings = ['a', 's', 'd', 'f', 'g', 'q', 'w', 'e', 'r', 't']
+            const promises = await batchEncrypt(strings, [], 4)
+
+            expect(axios).toBeCalledTimes(3)
+            expect(promises).toEqual(strings)
+        })
+
+        it("should return an empty array when there is an error", async () => {
+            jest.clearAllMocks();
+            mocked(axios).mockImplementationOnce(() => Promise.reject(new Error("error!")))
+            mocked(axios).mockImplementation((req: any) => Promise.resolve({
+                status: 200,
+                data: {
+                    encrypted: req.data.strings
+                }
+            } as any))
+            const strings = ['a', 's', 'd', 'f', 'g', 'q', 'w', 'e', 'r', 't']
+            const promises = await batchEncrypt(strings, [], 4)
+
+            expect(promises).toEqual([])
+        })
+
+        it("should preserve the index of each string", async () => {
+            jest.clearAllMocks();
+            // Mock the Utils API to return a 500 one time
+            mocked(axios).mockImplementationOnce((req: any) => Promise.resolve({
+                status: 200,
+                data: {
+                    encrypted: req.data.strings
+                }
+            } as any))
+            mocked(axios).mockImplementationOnce((req: any) => Promise.resolve({
+                status: 500,
+                data: {
+                    error: "Oops!"
+                }
+            } as any))
+            mocked(axios).mockImplementationOnce((req: any) => Promise.resolve({
+                status: 200,
+                data: {
+                    encrypted: req.data.strings
+                }
+            } as any))
+            const strings = ['a', 's', 'd', 'f', 'g', 'q', 'w', 'e', 'r', 't']
+            const promises = await batchEncrypt(strings, [], 4)
+
+            expect(promises).toEqual(['a', 's', 'd', 'f', '', '', '', '', 'r', 't'])
         })
     })
 })

@@ -195,8 +195,8 @@ async function execute(report: AcmeReport): Promise<Membership[] | Transaction[]
 		const [transactionData, membershipData] = await Promise.all([getReportFromEndpoint(report.type, constructReportUrl(report.path)), getReportFromEndpoint(AcmeReportList.membershipReport.type, constructReportUrl(AcmeReportList.membershipReport.path))]);
 
 		// Convert both to lists of person objects
-		const personRecordsFromTransactions = pp.processToRecords(transactionData.resultFieldList, report.type) as Person[];
-		const personRecordsFromMemberships = (pp.processToRecords(membershipData.resultFieldList, AcmeReportList.membershipReport.type) as Membership[]).map((membership) => {
+		const personRecordsFromTransactions = await pp.processToRecords(transactionData.resultFieldList, report.type) as Person[];
+		const personRecordsFromMemberships = (await pp.processToRecords(membershipData.resultFieldList, AcmeReportList.membershipReport.type) as Membership[]).map((membership) => {
 			const { CardCustomerEmail, CardCustomerFirstName, CardCustomerLastName, CardCustomerPrimaryZip, CardStartDate } = membership;
 			return new Person(CardCustomerEmail, CardCustomerFirstName, CardCustomerLastName, CardCustomerPrimaryZip, CardStartDate);
 		});
@@ -212,7 +212,7 @@ async function execute(report: AcmeReport): Promise<Membership[] | Transaction[]
 	else {
 		// Retrieve the data for this report from ACME
 		const reportData = await getReportFromEndpoint(report.type, constructReportUrl(report.path));
-		records = pp.processToRecords(reportData.resultFieldList, report.type);
+		records = await pp.processToRecords(reportData.resultFieldList, report.type);
 	}
 
 	return records;
