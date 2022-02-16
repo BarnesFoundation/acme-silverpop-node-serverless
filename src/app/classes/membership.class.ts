@@ -9,7 +9,7 @@ type ConstructorData = {
     RE_MembershipAppeal: string; CardType: string; CardName: string; CardStartDate: string;
     CardExpirationDate: string; CardCustomerPrimaryCity: string; CardCustomerPrimaryState: string;
     CardCustomerPrimaryZip: string; CardCustomerEmail: string; CardCustomerFirstName?: string;
-    CardCustomerLastName?: string; LoginLink?: string; RenewLink?: string; LinkExp?: number;
+    CardCustomerLastName?: string; LogInLink?: string; RenewLink?: string; LinkExp?: number;
 }
 
 class Membership extends BaseReport {
@@ -72,10 +72,14 @@ class Membership extends BaseReport {
         this.CardCustomerEmail = data.CardCustomerEmail;
         this.CardCustomerFirstName = data.CardCustomerFirstName;
         this.CardCustomerLastName = data.CardCustomerLastName;
-        this.LogInLink = data.LoginLink;
-        this.RenewLink = data.RenewLink
+        this.LogInLink = this.formatLoginLink(data.LogInLink);
+        this.RenewLink = this.formatLoginLink(data.RenewLink)
 
         data.LinkExp && (this.LinkExp = this.formatDate((new Date(data.LinkExp * 1000)).toISOString()));
+    }
+
+    formatLoginLink(e): string {
+        return e ? `ml?e=${e}` : e
     }
 }
 

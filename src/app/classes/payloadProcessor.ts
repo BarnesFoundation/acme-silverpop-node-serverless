@@ -14,7 +14,7 @@ export async function processToRecords(resultsList: ResultItem[], reportType): P
     let fieldValues = {}
 
     // Map the values array to the field name it corresponds to
-    resultsList.forEach(async (element: ResultItem) => {
+    for (const element of resultsList) {
         fieldValues[element.fieldName] = element.values;
         fields.push(element.fieldName);
 
@@ -38,9 +38,7 @@ export async function processToRecords(resultsList: ResultItem[], reportType): P
             fieldValues[linkExp] = linkExpValues;
             fields.push(linkExp);
         }
-
-    })
-
+    }
 
     let resultCount = fieldValues[fields[0]].length;
     // Formatted records for the sync
@@ -86,7 +84,7 @@ function objectFactory(r, objectType: string): Person | Transaction | Membership
                 CardExpirationDate: r.CardExpirationDate, CardCustomerPrimaryCity: r.CardCustomerPrimaryCity,
                 CardCustomerPrimaryState: r.CardCustomerPrimaryState, CardCustomerPrimaryZip: r.CardCustomerPrimaryZip,
                 CardCustomerEmail: r.CardCustomerEmail, CardCustomerFirstName: r.CardCustomerFirstName,
-                CardCustomerLastName: r.CardCustomerLastName, LoginLink: r.LoginLink,
+                CardCustomerLastName: r.CardCustomerLastName, LogInLink: r.LogInLink,
                 RenewLink: r.RenewLink, LinkExp: r.LinkExp
             });
 
@@ -129,9 +127,9 @@ export async function generateMembershipLinks(values) {
 
     // Create array with values for the LinkExp
     const linkExpValues = Array(values.length).fill(unixExpiry)
-     // Encrypted values
-     let encryptedLogInValues = []
-     let encryptedRenewValues = []
+    // Encrypted values
+    let encryptedLogInValues = []
+    let encryptedRenewValues = []
 
     try {
         encryptedLogInValues = await batchEncrypt(logInLinkValues, [], 500)
@@ -159,11 +157,12 @@ export async function batchEncrypt(strings: string[], promiseArray: Promise<any>
     if (remainder.length) {
         return batchEncrypt(remainder, promiseArray, batchSize)
     } else {
-        return Promise.all(promiseArray).then(responses => {
+        return await Promise.allSettled(promiseArray).then(responses => {
             const data = []
-            responses.forEach(resp => {
-                if (resp.status === 200) {
-                    data.push(...resp.data.encrypted)
+            responses.forEach((resp: any) => {
+
+                if (resp.status === "fulfilled" && resp.value.status === 200) {
+                    data.push(...resp.value.data.encrypted)
                 } else {
                     // Push empty string to the array if there was an issue encrypting a batch
                     // Since the index of each item matters, this will preserve then indexes

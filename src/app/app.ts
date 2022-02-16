@@ -203,10 +203,10 @@ async function execute(report: AcmeReport): Promise<Membership[] | Transaction[]
 
 		// We want the most recent membership record to use as the final contact record, or if no membership record exists for that person, we'd use the latest transaction record
 		// So sort both record sets by transaction date descending
-		const [ sortedContactRecordsFromTransactions, sortedContactRecordsFromMemberships ] = await Promise.all([ rp.sortByDateField(personRecordsFromTransactions, 'TransactionDate'), rp.sortByDateField(personRecordsFromMemberships, 'TransactionDate')]);
+		const [sortedContactRecordsFromTransactions, sortedContactRecordsFromMemberships] = await Promise.all([rp.sortByDateField(personRecordsFromTransactions, 'TransactionDate'), rp.sortByDateField(personRecordsFromMemberships, 'TransactionDate')]);
 
 		// Merge the two lists into a single records lst -- with memberships being first. This way a membership record would supercede even a later transaction record
-		records = [ ...sortedContactRecordsFromMemberships, ...sortedContactRecordsFromTransactions ];
+		records = [...sortedContactRecordsFromMemberships, ...sortedContactRecordsFromTransactions];
 	}
 
 	else {

@@ -87,7 +87,7 @@ describe("PayloadProcessor", () => {
             expect(promises).toEqual(strings)
         })
 
-        it("should return an empty array when there is an error", async () => {
+        it("should preserve the index of each string when there is an error", async () => {
             jest.clearAllMocks();
             mocked(axios).mockImplementationOnce(() => Promise.reject(new Error("error!")))
             mocked(axios).mockImplementation((req: any) => Promise.resolve({
@@ -99,10 +99,10 @@ describe("PayloadProcessor", () => {
             const strings = ['a', 's', 'd', 'f', 'g', 'q', 'w', 'e', 'r', 't']
             const promises = await batchEncrypt(strings, [], 4)
 
-            expect(promises).toEqual([])
+            expect(promises).toEqual(['', '', '', '', 'g', 'q', 'w', 'e', 'r', 't'])
         })
 
-        it("should preserve the index of each string", async () => {
+        it("should preserve the index of each string when utils API returns a 500", async () => {
             jest.clearAllMocks();
             // Mock the Utils API to return a 500 one time
             mocked(axios).mockImplementationOnce((req: any) => Promise.resolve({

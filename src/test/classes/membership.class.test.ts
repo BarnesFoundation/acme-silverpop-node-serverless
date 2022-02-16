@@ -30,7 +30,7 @@ describe("Membership", () => {
                 CardCustomerEmail: 'albert@example.com',
                 CardCustomerFirstName: 'Albert',
                 CardCustomerLastName: 'Barnes',
-                LoginLink: 'encryptedLoginLink',
+                LogInLink: 'encryptedLogInLink',
                 RenewLink: 'encryptedRenewLink',
                 LinkExp: 1634183999
             })
