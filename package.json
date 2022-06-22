@@ -4,7 +4,10 @@
   "description": "ACME Silverpop project ported over to NodeJS/TypeScript",
   "main": "handler.js",
   "scripts": {
-    "test": "jest src/test"
+    "test": "jest src/test",
+	"invoke-memberships": "npx serverless invoke local -f index --path ./events/memberships.json",
+	"invoke-contacts": "npx serverless invoke local -f index --path ./events/contacts.json",
+	"invoke-transactions": "npx serverless invoke local -f index --path ./events/transactions.json"
   },
   "dependencies": {
     "axios": "^0.25.0",
@@ -13,6 +16,7 @@
     "dotenv": "^6.0.0",
     "request": "^2.88.0",
     "request-promise-native": "^1.0.5",
+    "serverless": "^1.60.5",
     "ssh2-sftp-client": "^3.1.0"
   },
   "devDependencies": {
