@@ -7,7 +7,7 @@ import { Config } from '@utils/config';
 import { Convert } from '@utils/time';
 import { Input } from '@interfaces/input.interface';
 import { ReportEnums } from '@enums/report.enums';
-import { AcmeReportList, AcmeReport } from '@interfaces/acmeReport.interface';
+import { AcmeReportList, AcmeReport } from '@interfaces/acmeReport_Template.interface';
 import { AcmeReportPayload } from '@interfaces/acmeReportPayload.interface';
 
 import * as rp from '@classes/reportProcessor';

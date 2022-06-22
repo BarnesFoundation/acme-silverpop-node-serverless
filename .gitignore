@@ -13,6 +13,4 @@ jspm_packages
 
 # Private Barnes files
 private
-serverless.yml
-src/app/interfaces/acmeReport.interface.ts
 private.zip
