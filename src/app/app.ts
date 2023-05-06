@@ -83,9 +83,10 @@ function constructReportUrl(path) {
 
 /** Fetches report from the specified endpoint */
 function getReportFromEndpoint(
-  reportType: ReportEnums,
-  requestUrl: string
+  report: AcmeReport
 ): request.RequestPromise<AcmeReportPayload> {
+  const requestUrl = constructReportUrl(report.path);
+
   // Configure options for the http request
   const options = {
     url: requestUrl,
@@ -102,7 +103,10 @@ function getReportFromEndpoint(
   try {
     return request.get(options);
   } catch (error) {
-    console.log(`An error occurred retrieving: ${reportType} from ACME`, error);
+    console.log(
+      `An error occurred retrieving: ${report.type} from ACME`,
+      error
+    );
   }
 }
 
@@ -236,11 +240,8 @@ async function execute(
   if (report.type === ReportEnums.CONTACT_REPORT) {
     // Retrieve the transaction data and membership data simultaneously
     const [transactionData, membershipData] = await Promise.all([
-      getReportFromEndpoint(report.type, constructReportUrl(report.path)),
-      getReportFromEndpoint(
-        AcmeReportList.membershipReport.type,
-        constructReportUrl(AcmeReportList.membershipReport.path)
-      ),
+      getReportFromEndpoint(report),
+      getReportFromEndpoint(AcmeReportList.membershipReport),
     ]);
 
     // Convert both to lists of person objects
@@ -287,10 +288,7 @@ async function execute(
     ];
   } else {
     // Retrieve the data for this report from ACME
-    const reportData = await getReportFromEndpoint(
-      report.type,
-      constructReportUrl(report.path)
-    );
+    const reportData = await getReportFromEndpoint(report);
     records = await pp.processToRecords(
       reportData.resultFieldList,
       report.type
