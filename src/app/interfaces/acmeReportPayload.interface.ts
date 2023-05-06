@@ -1,15 +1,14 @@
 interface AcmeReportPayload {
-
-    collectionName: string,
-    recordCount: number,
-    skippedRecordCount: number,
-    resultFieldList: ResultItem []
+  collectionName: string;
+  recordCount: number;
+  skippedRecordCount: number;
+  resultFieldList: ResultItem[];
 }
 
 interface ResultItem {
-    fieldName: string,
-    analyticsDataType: string,
-    values: any[]
+  fieldName: string;
+  analyticsDataType: string;
+  values: any[];
 }
 
-export { AcmeReportPayload, ResultItem }
+export { AcmeReportPayload, ResultItem };
