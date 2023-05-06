@@ -1,23 +1,30 @@
-import * as request from "request-promise-native";
+import axios from "axios";
 import * as ssh2SFTPClient from "ssh2-sftp-client";
+import { ReportFunctions, ACMETicketingClient } from "acme-ticketing-client";
 
 import { Callback } from "aws-lambda";
 
 import { Config } from "@utils/config";
 import { Convert } from "@utils/time";
+import { pollUntilComplete } from "@utils/polUntilComplete";
 import { Input } from "@interfaces/input.interface";
 import { ReportEnums } from "@enums/report.enums";
 import {
   AcmeReportList,
   AcmeReport,
 } from "@interfaces/acmeReport_Template.interface";
-import { AcmeReportPayload } from "@interfaces/acmeReportPayload.interface";
 
 import * as rp from "@classes/reportProcessor";
 import * as pp from "@classes/payloadProcessor";
 import { Membership } from "./classes/membership.class";
 import { Transaction } from "./classes/transaction.class";
 import { Person } from "@classes/person.class";
+
+new ACMETicketingClient({
+  b2cTenantId: Config.apiTenantId,
+  apiKey: Config.apiKey,
+  apiRootUrl: Config.apiRootUrl,
+});
 
 async function main(input: Input, cb: Callback) {
   const startTime = Date.now();
@@ -82,30 +89,28 @@ function constructReportUrl(path) {
 }
 
 /** Fetches report from the specified endpoint */
-function getReportFromEndpoint(
-  report: AcmeReport
-): request.RequestPromise<AcmeReportPayload> {
+async function getReportFromEndpoint(report: AcmeReport) {
   const requestUrl = constructReportUrl(report.path);
-
-  // Configure options for the http request
-  const options = {
-    url: requestUrl,
-    headers: {
-      Accept: "application/json",
-      "x-acme-api-key": Config.apiKey,
-      "x-b2c-tenant-id": Config.apiTenantId,
-    },
-    json: true,
-    timeout: 900000,
-  };
 
   // Await the response for the csv data from the request
   try {
-    return request.get(options);
+    const response = await axios({
+      method: "get",
+      url: requestUrl,
+
+      headers: {
+        Accept: "application/json",
+        "x-acme-api-key": Config.apiKey,
+        "x-b2c-tenant-id": Config.apiTenantId,
+      },
+      timeout: 900000,
+    });
+
+    return response.data;
   } catch (error) {
     console.log(
-      `An error occurred retrieving: ${report.type} from ACME`,
-      error
+      `An error occurred retrieving thee report ${report.type} from ACME. URL for the report  is ${requestUrl}`,
+      error.response.data
     );
   }
 }
@@ -238,10 +243,49 @@ async function execute(
   let records;
 
   if (report.type === ReportEnums.CONTACT_REPORT) {
-    // Retrieve the transaction data and membership data simultaneously
+    const { membershipReport } = AcmeReportList;
+
+    const transactionReportDefinition =
+      await ReportFunctions.getReportDefinition(report.path);
+    const membershipReportDefinition =
+      await ReportFunctions.getReportDefinition(membershipReport.path);
+
+    // Get the definitions for both of the reports
+    const transactionReportExecution = await ReportFunctions.executeReport({
+      reportUuid: report.path,
+      queryExpression: transactionReportDefinition.queryExpression,
+      endDate: transactionReportDefinition.dateSettings.endDate,
+      endDateTime: transactionReportDefinition.dateSettings.endDateTime,
+      startDate: transactionReportDefinition.dateSettings.startDate,
+      startDateTime: transactionReportDefinition.dateSettings.startDateTime,
+      dateRangeField: transactionReportDefinition.dateSettings.dateRangeField,
+    });
+    const membershipReportExecution = await ReportFunctions.executeReport({
+      reportUuid: membershipReport.path,
+      queryExpression: membershipReportDefinition.queryExpression,
+      endDate: membershipReportDefinition.dateSettings.endDate,
+      endDateTime: membershipReportDefinition.dateSettings.endDateTime,
+      startDate: membershipReportDefinition.dateSettings.startDate,
+      startDateTime: membershipReportDefinition.dateSettings.startDateTime,
+      dateRangeField: membershipReportDefinition.dateSettings.dateRangeField,
+    });
+
+    // Poll until the reports are complete
+    await Promise.all([
+      pollUntilComplete(transactionReportExecution),
+      pollUntilComplete(membershipReportExecution),
+    ]);
+
+    // Retrieve the report results
     const [transactionData, membershipData] = await Promise.all([
-      getReportFromEndpoint(report),
-      getReportFromEndpoint(AcmeReportList.membershipReport),
+      ReportFunctions.retrieveReportResults(
+        transactionReportExecution.id,
+        "json"
+      ),
+      ReportFunctions.retrieveReportResults(
+        membershipReportExecution.id,
+        "json"
+      ),
     ]);
 
     // Convert both to lists of person objects
@@ -252,7 +296,7 @@ async function execute(
     const personRecordsFromMemberships = (
       (await pp.processToRecords(
         membershipData.resultFieldList,
-        AcmeReportList.membershipReport.type
+        membershipReport.type
       )) as Membership[]
     ).map((membership) => {
       const {
@@ -288,9 +332,30 @@ async function execute(
     ];
   } else {
     // Retrieve the data for this report from ACME
-    const reportData = await getReportFromEndpoint(report);
+    const transactionReportDefinition =
+      await ReportFunctions.getReportDefinition(report.path);
+
+    // Get the definitions for both of the reports
+    const transactionReportExecution = await ReportFunctions.executeReport({
+      reportUuid: report.path,
+      queryExpression: transactionReportDefinition.queryExpression,
+      endDate: transactionReportDefinition.dateSettings.endDate,
+      endDateTime: transactionReportDefinition.dateSettings.endDateTime,
+      startDate: transactionReportDefinition.dateSettings.startDate,
+      startDateTime: transactionReportDefinition.dateSettings.startDateTime,
+      dateRangeField: transactionReportDefinition.dateSettings.dateRangeField,
+    });
+
+    // Poll until the reports are complete
+    await pollUntilComplete(transactionReportExecution);
+
+    // Retrieve the report results
+    const transactionData = await ReportFunctions.retrieveReportResults(
+      transactionReportExecution.id,
+      "json"
+    );
     records = await pp.processToRecords(
-      reportData.resultFieldList,
+      transactionData.resultFieldList,
       report.type
     );
   }
