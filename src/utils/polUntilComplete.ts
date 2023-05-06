@@ -16,8 +16,6 @@ export const pollUntilComplete = async (reportExecution: ReportExecution) => {
         clearInterval(interval);
 
         resolve("");
-      } else {
-        console.log(`New status for report ID ${id}: ${status}`);
       }
     }, 1000);
   });
