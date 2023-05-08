@@ -7,7 +7,8 @@
     "test": "jest src/test",
     "invoke-memberships": "npx serverless invoke local -f index --path ./events/memberships.json",
     "invoke-contacts": "npx serverless invoke local -f index --path ./events/contacts.json",
-    "invoke-transactions": "npx serverless invoke local -f index --path ./events/transactions.json"
+    "invoke-transactions": "npx serverless invoke local -f index --path ./events/transactions.json",
+	"deploy:prod": "npx serverless deploy --verbose"
   },
   "dependencies": {
     "acme-ticketing-client": "^1.0.733",
