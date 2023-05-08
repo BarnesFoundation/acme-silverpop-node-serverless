@@ -11,10 +11,10 @@ export async function processToRecords(
   resultsList: ResultItem[],
   reportType
 ): Promise<Person[] | Transaction[] | Membership[]> {
-  // fields array includes all column titles (fields) from the ACME report
-  let fields: string[] = [];
-  // each object in the fieldValues array represents a column from the ACME report with the key being the column title (field)
-  let fieldValues = {};
+  // The fields array includes all column titles from the ACME report
+  // and each object in the fieldValues array represents a column from the ACME report with the key being the column title (field)
+  const fields: string[] = [];
+  const fieldValues = {};
 
   // Map the values array to the field name it corresponds to
   for (const element of resultsList) {
@@ -45,9 +45,8 @@ export async function processToRecords(
     }
   }
 
-  let resultCount = fieldValues[fields[0]].length;
-  // Formatted records for the sync
-  let records = [];
+  const resultCount = fieldValues[fields[0]].length;
+  const records = [];
 
   // Create a record from the field values
   for (let h = 0; h < resultCount; h++) {
