@@ -14,7 +14,7 @@ const Config = {
 
   utilsApiUrl: process.env.UTILS_API_URL,
 
-  environment: process.env.ENV,
+  environment: (process.env.ENV || "LOCAL").toUpperCase(),
 };
 
 export { Config };

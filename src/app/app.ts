@@ -41,7 +41,7 @@ async function main(input: Input, cb: Callback) {
   );
 
   const reportCSV = await modifyReportRecords(records, requestedReport.type);
-  console.log(`Generated the CSV for the report`);
+  console.log(`Generated the CSV for the ${input.report} report`);
 
   // Upload the report CSV to the SFTP site
   try {
