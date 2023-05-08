@@ -1,17 +1,19 @@
-import * as request from "request-promise-native";
 import * as ssh2SFTPClient from "ssh2-sftp-client";
+import { ReportFunctions, ACMETicketingClient } from "acme-ticketing-client";
+import { Readable } from "stream";
 
 import { Callback } from "aws-lambda";
 
 import { Config } from "@utils/config";
 import { Convert } from "@utils/time";
+import { pollUntilComplete } from "@utils/polUntilComplete";
+import { generateReportFileName } from "@utils/generateReportFileName";
 import { Input } from "@interfaces/input.interface";
 import { ReportEnums } from "@enums/report.enums";
 import {
   AcmeReportList,
   AcmeReport,
 } from "@interfaces/acmeReport_Template.interface";
-import { AcmeReportPayload } from "@interfaces/acmeReportPayload.interface";
 
 import * as rp from "@classes/reportProcessor";
 import * as pp from "@classes/payloadProcessor";
@@ -19,42 +21,42 @@ import { Membership } from "./classes/membership.class";
 import { Transaction } from "./classes/transaction.class";
 import { Person } from "@classes/person.class";
 
+new ACMETicketingClient({
+  b2cTenantId: Config.apiTenantId,
+  apiKey: Config.apiKey,
+  apiRootUrl: Config.apiRootUrl,
+});
+
 async function main(input: Input, cb: Callback) {
   const startTime = Date.now();
 
-  const { reportId } = input;
-
   // Set the report to be used for this execution and file name
-  const requestedReport = setReport(reportId);
-  const fileName =
-    Config.environment === "PRODUCTION"
-      ? input.report + ".csv"
-      : input.report + "-test.csv";
+  const requestedReport = setReport(input.reportId);
+  const fileName = generateReportFileName(input.report);
 
-  // Retrieve the report records and pply modifications to them
+  // Retrieve report results and parse them to records
   const records = await execute(requestedReport);
+  console.log(
+    `Created ${records.length} records for the ${input.report} Report`
+  );
+
   const reportCSV = await modifyReportRecords(records, requestedReport.type);
+  console.log(`Generated the CSV for the ${input.report} report`);
 
-  // Upload the reports to the SFTP site
-  let error;
-  const sftpUploadSuccess = await uploadToSFTP(reportCSV, fileName, error);
+  // Upload the report CSV to the SFTP site
+  try {
+    await uploadToSFTP(reportCSV, fileName);
+    const elapsedTime = Convert(Date.now() - startTime);
 
-  const elapsedTime = Convert(Date.now() - startTime);
-  const result = sftpUploadSuccess
-    ? "Uploaded " +
-      fileName +
-      " to the SFTP site with elapsed time " +
-      elapsedTime
-    : "Failed to upload " + fileName + " to the SFTP site";
-
-  // Return success
-  if (sftpUploadSuccess) {
-    cb(null, result);
-  }
-
-  // Pass the error to AWS
-  else {
-    cb(error, result);
+    console.log(
+      `Uploaded ${fileName} to the SFTP site with elapsed time ${elapsedTime}`
+    );
+    cb(
+      null,
+      `Successfully uploaded the file ${fileName} to the SFTP site in ${elapsedTime}`
+    );
+  } catch (error) {
+    cb(error);
   }
 }
 
@@ -76,86 +78,49 @@ function setReport(reportId): AcmeReport {
   }
 }
 
-/** Constructs the complete report url to execute in the ACME API */
-function constructReportUrl(path) {
-  return Config.apiRootUrl + Config.apiReportEndpoint + path;
-}
-
-/** Fetches report from the specified endpoint */
-function getReportFromEndpoint(
-  reportType: ReportEnums,
-  requestUrl: string
-): request.RequestPromise<AcmeReportPayload> {
-  // Configure options for the http request
-  const options = {
-    url: requestUrl,
-    headers: {
-      Accept: "application/json",
-      "x-acme-api-key": Config.apiKey,
-      "x-b2c-tenant-id": Config.apiTenantId,
-    },
-    json: true,
-    timeout: 900000,
-  };
-
-  // Await the response for the csv data from the request
-  try {
-    return request.get(options);
-  } catch (error) {
-    console.log(`An error occurred retrieving: ${reportType} from ACME`, error);
-  }
-}
-
 /** Connects to the Watson Campaign Automation SFTP site */
-async function uploadToSFTP(csv, csvName, possibleError) {
-  let successfulUpload: boolean;
+async function uploadToSFTP(reportCSV: string, nameOfCSV: string) {
+  const sftpPath = `/upload/${nameOfCSV}`;
+  const sftpClient = new ssh2SFTPClient();
 
-  let sftp = new ssh2SFTPClient();
-  let credentials = {
-    host: Config.sftpHost,
-    port: 22,
-    username: Config.sftpUsername,
-    password: Config.sftpPassword,
-  };
-
-  // Setup stream for writing
-  let Readable = require("stream").Readable;
-  let stream = new Readable();
-
-  let sftpPath = `/upload/${csvName}`;
+  // Setup stream for writing. For some reason, typescript doesn't recognize "Readable.from" as a valid function
+  // @ts-ignore
+  const readable = Readable.from(reportCSV);
+  const stream = new Readable();
 
   // Add the CSV to the stream and newline to signify end of stream
-  stream.push(csv);
-  stream.push(null);
+  readable.on("data", (csvChunk) => {
+    stream.push(csvChunk);
+  });
+  readable.on("end", () => {
+    stream.push(null);
+  });
 
   try {
-    await sftp.connect(credentials);
-    await sftp.put(stream, sftpPath);
-    await sftp.end();
-
-    // Set that the stfp upload completed
-    successfulUpload = true;
+    await sftpClient.connect({
+      host: Config.sftpHost,
+      port: 22,
+      username: Config.sftpUsername,
+      password: Config.sftpPassword,
+    });
+    await sftpClient.put(stream, sftpPath);
+    await sftpClient.end();
   } catch (error) {
     console.log(
-      `An error occurred uploading to ${sftpPath} in the SFTP site`,
+      `Failed upload of the CSV ${nameOfCSV} to ${sftpPath} in the SFTP site`,
       error
     );
-
-    // Return that an error occurred during the sftp upload
-    possibleError = error;
-    successfulUpload = false;
-  } finally {
-    return successfulUpload;
+    throw new Error(
+      `An error occurred uploading the CSV ${nameOfCSV} to the SFTP site`
+    );
   }
 }
 
 /** Applies modifications to the passed records and returns csv string */
 async function modifyReportRecords(
   reportRecords: Person[] | Membership[] | Transaction[],
-  reportType: string
+  reportType: ReportEnums
 ): Promise<string> {
-  let csv: string;
-
   switch (reportType) {
     // Membership report has guests removed, sorted, and deduped
     case ReportEnums.MEMBERSHIP_REPORT: {
@@ -167,7 +132,7 @@ async function modifyReportRecords(
       records = rp.removeDuplicates(records, "CardCustomerEmail");
 
       // Create CSV with these headers only
-      csv = await rp.createCSV(records, [
+      const membershipCSV = await rp.createCSV(records, [
         "MembershipNumber",
         "MembershipLevelName",
         "MembershipOfferingName",
@@ -196,52 +161,90 @@ async function modifyReportRecords(
         "RenewLink",
         "LinkExp",
       ]);
-      break;
+      return membershipCSV;
     }
 
     // Transaction report gets no modifications
     case ReportEnums.TRANSACTION_REPORT: {
-      let records = reportRecords as Transaction[];
-      csv = await rp.createCSV(records);
-      break;
+      const transactionCSV = await rp.createCSV(reportRecords);
+      return transactionCSV;
     }
 
     // Contact report
     case ReportEnums.CONTACT_REPORT: {
-      let records = reportRecords as Person[];
-
-      // Remove duplicates -- because membership records are listed first, they'll always be the latest unique record for a person. And if no membership record exists for a person's transaction, their latest transaction details would be used instead
-      records = rp.removeDuplicates(records, "Email");
+      // Remove duplicates -- because membership records are listed first, they'll always be the latest unique record for a person.
+      // And if no membership record exists for a person's transaction, their latest transaction details would be used instead
+      const records = rp.removeDuplicates(reportRecords as Person[], "Email");
 
       // Create CSV with these headers only
-      csv = await rp.createCSV(records, [
+      const contactCSV = await rp.createCSV(records, [
         "Email",
         "ContactFirstName",
         "ContactLastName",
         "ZipCode",
       ]);
-      break;
+      return contactCSV;
+    }
+
+    default: {
+      throw new Error("Unhandled report type passed for CSV creation");
     }
   }
-
-  return csv;
 }
 
 /** Handles most of the work for processing the requested report. Returns a list of records of Transaction, Membership, or Person type */
 async function execute(
   report: AcmeReport
 ): Promise<Membership[] | Transaction[] | Person[]> {
-  let records;
-
+  // Handle executing the Contact Report
   if (report.type === ReportEnums.CONTACT_REPORT) {
-    // Retrieve the transaction data and membership data simultaneously
+    const { membershipReport } = AcmeReportList;
+
+    const transactionReportDefinition =
+      await ReportFunctions.getReportDefinition(report.path);
+    const membershipReportDefinition =
+      await ReportFunctions.getReportDefinition(membershipReport.path);
+
+    // Get the definitions for both of the reports
+    const transactionReportExecution = await ReportFunctions.executeReport({
+      reportUuid: report.path,
+      queryExpression: transactionReportDefinition.queryExpression,
+      endDate: transactionReportDefinition.dateSettings.endDate,
+      endDateTime: transactionReportDefinition.dateSettings.endDateTime,
+      startDate: transactionReportDefinition.dateSettings.startDate,
+      startDateTime: transactionReportDefinition.dateSettings.startDateTime,
+      dateRangeField: transactionReportDefinition.dateSettings.dateRangeField,
+    });
+    const membershipReportExecution = await ReportFunctions.executeReport({
+      reportUuid: membershipReport.path,
+      queryExpression: membershipReportDefinition.queryExpression,
+      endDate: membershipReportDefinition.dateSettings.endDate,
+      endDateTime: membershipReportDefinition.dateSettings.endDateTime,
+      startDate: membershipReportDefinition.dateSettings.startDate,
+      startDateTime: membershipReportDefinition.dateSettings.startDateTime,
+      dateRangeField: membershipReportDefinition.dateSettings.dateRangeField,
+    });
+
+    // Poll until the reports are complete
+    await Promise.all([
+      pollUntilComplete(transactionReportExecution),
+      pollUntilComplete(membershipReportExecution),
+    ]);
+
+    // Retrieve the report results
     const [transactionData, membershipData] = await Promise.all([
-      getReportFromEndpoint(report.type, constructReportUrl(report.path)),
-      getReportFromEndpoint(
-        AcmeReportList.membershipReport.type,
-        constructReportUrl(AcmeReportList.membershipReport.path)
+      ReportFunctions.retrieveReportResults(
+        transactionReportExecution.id,
+        "json"
+      ),
+      ReportFunctions.retrieveReportResults(
+        membershipReportExecution.id,
+        "json"
       ),
     ]);
+    console.log(
+      "Retrieved report results for the Transaction and Membership Reports execution"
+    );
 
     // Convert both to lists of person objects
     const personRecordsFromTransactions = (await pp.processToRecords(
@@ -251,7 +254,7 @@ async function execute(
     const personRecordsFromMemberships = (
       (await pp.processToRecords(
         membershipData.resultFieldList,
-        AcmeReportList.membershipReport.type
+        membershipReport.type
       )) as Membership[]
     ).map((membership) => {
       const {
@@ -281,23 +284,49 @@ async function execute(
     ]);
 
     // Merge the two lists into a single records lst -- with memberships being first. This way a membership record would supercede even a later transaction record
-    records = [
+    const records = [
       ...sortedContactRecordsFromMemberships,
       ...sortedContactRecordsFromTransactions,
     ];
-  } else {
-    // Retrieve the data for this report from ACME
-    const reportData = await getReportFromEndpoint(
-      report.type,
-      constructReportUrl(report.path)
-    );
-    records = await pp.processToRecords(
-      reportData.resultFieldList,
-      report.type
-    );
+
+    return records;
   }
 
-  return records;
+  // Handle executing the Transaction Report
+  else {
+    const transactionReportDefinition =
+      await ReportFunctions.getReportDefinition(report.path);
+
+    // Get the definitions for both of the reports
+    const transactionReportExecution = await ReportFunctions.executeReport({
+      reportUuid: report.path,
+      queryExpression: transactionReportDefinition.queryExpression,
+      endDate: transactionReportDefinition.dateSettings.endDate,
+      endDateTime: transactionReportDefinition.dateSettings.endDateTime,
+      startDate: transactionReportDefinition.dateSettings.startDate,
+      startDateTime: transactionReportDefinition.dateSettings.startDateTime,
+      dateRangeField: transactionReportDefinition.dateSettings.dateRangeField,
+    });
+
+    // Poll until the reports are complete
+    await pollUntilComplete(transactionReportExecution);
+
+    // Retrieve the report results
+    const transactionData = await ReportFunctions.retrieveReportResults(
+      transactionReportExecution.id,
+      "json"
+    );
+    console.log(
+      "Retrieved report results for the Transaction Report execution"
+    );
+
+    const records = await pp.processToRecords(
+      transactionData.resultFieldList,
+      report.type
+    );
+
+    return records;
+  }
 }
 
 export { main as Main };
