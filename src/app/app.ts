@@ -119,10 +119,8 @@ async function uploadToSFTP(reportCSV: string, nameOfCSV: string) {
 /** Applies modifications to the passed records and returns csv string */
 async function modifyReportRecords(
   reportRecords: Person[] | Membership[] | Transaction[],
-  reportType: string
+  reportType: ReportEnums
 ): Promise<string> {
-  let csv: string;
-
   switch (reportType) {
     // Membership report has guests removed, sorted, and deduped
     case ReportEnums.MEMBERSHIP_REPORT: {
@@ -134,7 +132,7 @@ async function modifyReportRecords(
       records = rp.removeDuplicates(records, "CardCustomerEmail");
 
       // Create CSV with these headers only
-      csv = await rp.createCSV(records, [
+      const membershipCSV = await rp.createCSV(records, [
         "MembershipNumber",
         "MembershipLevelName",
         "MembershipOfferingName",
@@ -163,35 +161,35 @@ async function modifyReportRecords(
         "RenewLink",
         "LinkExp",
       ]);
-      break;
+      return membershipCSV;
     }
 
     // Transaction report gets no modifications
     case ReportEnums.TRANSACTION_REPORT: {
-      let records = reportRecords as Transaction[];
-      csv = await rp.createCSV(records);
-      break;
+      const transactionCSV = await rp.createCSV(reportRecords);
+      return transactionCSV;
     }
 
     // Contact report
     case ReportEnums.CONTACT_REPORT: {
-      let records = reportRecords as Person[];
-
-      // Remove duplicates -- because membership records are listed first, they'll always be the latest unique record for a person. And if no membership record exists for a person's transaction, their latest transaction details would be used instead
-      records = rp.removeDuplicates(records, "Email");
+      // Remove duplicates -- because membership records are listed first, they'll always be the latest unique record for a person.
+      // And if no membership record exists for a person's transaction, their latest transaction details would be used instead
+      const records = rp.removeDuplicates(reportRecords as Person[], "Email");
 
       // Create CSV with these headers only
-      csv = await rp.createCSV(records, [
+      const contactCSV = await rp.createCSV(records, [
         "Email",
         "ContactFirstName",
         "ContactLastName",
         "ZipCode",
       ]);
-      break;
+      return contactCSV;
+    }
+
+    default: {
+      throw new Error("Unhandled report type passed for CSV creation");
     }
   }
-
-  return csv;
 }
 
 /** Handles most of the work for processing the requested report. Returns a list of records of Transaction, Membership, or Person type */
