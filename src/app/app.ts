@@ -1,12 +1,13 @@
-import axios from "axios";
 import * as ssh2SFTPClient from "ssh2-sftp-client";
 import { ReportFunctions, ACMETicketingClient } from "acme-ticketing-client";
+import { Readable } from "stream";
 
 import { Callback } from "aws-lambda";
 
 import { Config } from "@utils/config";
 import { Convert } from "@utils/time";
 import { pollUntilComplete } from "@utils/polUntilComplete";
+import { generateReportFileName } from "@utils/generateReportFileName";
 import { Input } from "@interfaces/input.interface";
 import { ReportEnums } from "@enums/report.enums";
 import {
@@ -29,39 +30,33 @@ new ACMETicketingClient({
 async function main(input: Input, cb: Callback) {
   const startTime = Date.now();
 
-  const { reportId } = input;
-
   // Set the report to be used for this execution and file name
-  const requestedReport = setReport(reportId);
-  const fileName =
-    Config.environment === "PRODUCTION"
-      ? input.report + ".csv"
-      : input.report + "-test.csv";
+  const requestedReport = setReport(input.reportId);
+  const fileName = generateReportFileName(input.report);
 
-  // Retrieve the report records and pply modifications to them
+  // Retrieve report results and parse them to records
   const records = await execute(requestedReport);
+  console.log(
+    `Created ${records.length} records for the ${input.report} Report`
+  );
+
   const reportCSV = await modifyReportRecords(records, requestedReport.type);
+  console.log(`Generated the CSV for the report`);
 
-  // Upload the reports to the SFTP site
-  let error;
-  const sftpUploadSuccess = await uploadToSFTP(reportCSV, fileName, error);
+  // Upload the report CSV to the SFTP site
+  try {
+    await uploadToSFTP(reportCSV, fileName);
+    const elapsedTime = Convert(Date.now() - startTime);
 
-  const elapsedTime = Convert(Date.now() - startTime);
-  const result = sftpUploadSuccess
-    ? "Uploaded " +
-      fileName +
-      " to the SFTP site with elapsed time " +
-      elapsedTime
-    : "Failed to upload " + fileName + " to the SFTP site";
-
-  // Return success
-  if (sftpUploadSuccess) {
-    cb(null, result);
-  }
-
-  // Pass the error to AWS
-  else {
-    cb(error, result);
+    console.log(
+      `Uploaded ${fileName} to the SFTP site with elapsed time ${elapsedTime}`
+    );
+    cb(
+      null,
+      `Successfully uploaded the file ${fileName} to the SFTP site in ${elapsedTime}`
+    );
+  } catch (error) {
+    cb(error);
   }
 }
 
@@ -83,78 +78,41 @@ function setReport(reportId): AcmeReport {
   }
 }
 
-/** Constructs the complete report url to execute in the ACME API */
-function constructReportUrl(path) {
-  return Config.apiRootUrl + Config.apiReportEndpoint + path;
-}
-
-/** Fetches report from the specified endpoint */
-async function getReportFromEndpoint(report: AcmeReport) {
-  const requestUrl = constructReportUrl(report.path);
-
-  // Await the response for the csv data from the request
-  try {
-    const response = await axios({
-      method: "get",
-      url: requestUrl,
-
-      headers: {
-        Accept: "application/json",
-        "x-acme-api-key": Config.apiKey,
-        "x-b2c-tenant-id": Config.apiTenantId,
-      },
-      timeout: 900000,
-    });
-
-    return response.data;
-  } catch (error) {
-    console.log(
-      `An error occurred retrieving thee report ${report.type} from ACME. URL for the report  is ${requestUrl}`,
-      error.response.data
-    );
-  }
-}
-
 /** Connects to the Watson Campaign Automation SFTP site */
-async function uploadToSFTP(csv, csvName, possibleError) {
-  let successfulUpload: boolean;
+async function uploadToSFTP(reportCSV: string, nameOfCSV: string) {
+  const sftpPath = `/upload/${nameOfCSV}`;
+  const sftpClient = new ssh2SFTPClient();
 
-  let sftp = new ssh2SFTPClient();
-  let credentials = {
-    host: Config.sftpHost,
-    port: 22,
-    username: Config.sftpUsername,
-    password: Config.sftpPassword,
-  };
-
-  // Setup stream for writing
-  let Readable = require("stream").Readable;
-  let stream = new Readable();
-
-  let sftpPath = `/upload/${csvName}`;
+  // Setup stream for writing. For some reason, typescript doesn't recognize "Readable.from" as a valid function
+  // @ts-ignore
+  const readable = Readable.from(reportCSV);
+  const stream = new Readable();
 
   // Add the CSV to the stream and newline to signify end of stream
-  stream.push(csv);
-  stream.push(null);
+  readable.on("data", (csvChunk) => {
+    stream.push(csvChunk);
+  });
+  readable.on("end", () => {
+    stream.push(null);
+  });
 
   try {
-    await sftp.connect(credentials);
-    await sftp.put(stream, sftpPath);
-    await sftp.end();
-
-    // Set that the stfp upload completed
-    successfulUpload = true;
+    await sftpClient.connect({
+      host: Config.sftpHost,
+      port: 22,
+      username: Config.sftpUsername,
+      password: Config.sftpPassword,
+    });
+    await sftpClient.put(stream, sftpPath);
+    await sftpClient.end();
   } catch (error) {
     console.log(
-      `An error occurred uploading to ${sftpPath} in the SFTP site`,
+      `Failed upload of the CSV ${nameOfCSV} to ${sftpPath} in the SFTP site`,
       error
     );
-
-    // Return that an error occurred during the sftp upload
-    possibleError = error;
-    successfulUpload = false;
-  } finally {
-    return successfulUpload;
+    throw new Error(
+      `An error occurred uploading the CSV ${nameOfCSV} to the SFTP site`
+    );
   }
 }
 
@@ -240,8 +198,7 @@ async function modifyReportRecords(
 async function execute(
   report: AcmeReport
 ): Promise<Membership[] | Transaction[] | Person[]> {
-  let records;
-
+  // Handle executing the Contact Report
   if (report.type === ReportEnums.CONTACT_REPORT) {
     const { membershipReport } = AcmeReportList;
 
@@ -287,6 +244,9 @@ async function execute(
         "json"
       ),
     ]);
+    console.log(
+      "Retrieved report results for the Transaction and Membership Reports execution"
+    );
 
     // Convert both to lists of person objects
     const personRecordsFromTransactions = (await pp.processToRecords(
@@ -326,12 +286,16 @@ async function execute(
     ]);
 
     // Merge the two lists into a single records lst -- with memberships being first. This way a membership record would supercede even a later transaction record
-    records = [
+    const records = [
       ...sortedContactRecordsFromMemberships,
       ...sortedContactRecordsFromTransactions,
     ];
-  } else {
-    // Retrieve the data for this report from ACME
+
+    return records;
+  }
+
+  // Handle executing the Transaction Report
+  else {
     const transactionReportDefinition =
       await ReportFunctions.getReportDefinition(report.path);
 
@@ -354,13 +318,17 @@ async function execute(
       transactionReportExecution.id,
       "json"
     );
-    records = await pp.processToRecords(
+    console.log(
+      "Retrieved report results for the Transaction Report execution"
+    );
+
+    const records = await pp.processToRecords(
       transactionData.resultFieldList,
       report.type
     );
-  }
 
-  return records;
+    return records;
+  }
 }
 
 export { main as Main };
